@@ -25,9 +25,12 @@ export default function GamblingPage() {
   const [diceMessage, setDiceMessage] = useState('')
 
   useEffect(() => {
-    if (!loading && !user) {
+    // Only redirect after loading is complete
+    if (loading) return
+    
+    if (!user) {
       router.push('/')
-    } else if (user) {
+    } else {
       setUserPoints(user.points)
     }
   }, [user, loading, router])

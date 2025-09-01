@@ -3,11 +3,15 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ErrorBoundary } from '@/components/error-boundary'
+import { ToastProvider } from '@/components/ui/toast'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'CodeDark - Gamified Learning',
-  description: 'Points-based lifelines and gambling system',
+  title: 'CodeDark - Gaming Platform',
+  description: 'Play games, earn points, and compete with friends!',
+  keywords: 'gaming, points, leaderboard, slots, dice, lifelines',
+  authors: [{ name: 'CodeDark Team' }],
   generator: 'v0.app',
 }
 
@@ -28,9 +32,13 @@ html {
         `}</style>
       </head>
       <body>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+        <ErrorBoundary>
+          <ToastProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </ToastProvider>
+        </ErrorBoundary>
         <Analytics />
       </body>
     </html>

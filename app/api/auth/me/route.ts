@@ -17,10 +17,19 @@ export async function GET(request: NextRequest) {
     }
 
     const db = await getDb()
-    const user = await db.collection('users').findOne({ _id: payload.userId })
+    let user = await db.collection('users').findOne({ _id: payload.userId })
 
-    if (!user || !user.isActive) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    // Fallback: try finding by username if ID doesn't match
+    if (!user) {
+      user = await db.collection('users').findOne({ username: payload.username })
+    }
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 401 })
+    }
+
+    if (!user.isActive) {
+      return NextResponse.json({ error: 'Account disabled' }, { status: 401 })
     }
 
     return NextResponse.json({
@@ -29,6 +38,7 @@ export async function GET(request: NextRequest) {
         username: user.username,
         email: user.email,
         points: user.points,
+        isAdmin: user.isAdmin || false,
         lifelines: user.lifelines
       }
     })

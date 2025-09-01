@@ -7,6 +7,7 @@ interface User {
   username: string
   email: string
   points: number
+  isAdmin?: boolean
   lifelines: Array<{
     lifelineId: string
     name: string
@@ -37,11 +38,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const data = await response.json()
         setUser(data.user)
-      } else if (response.status !== 401) {
+      } else if (response.status === 401) {
+        // User not authenticated, but that's okay
+        setUser(null)
+      } else {
         console.error('Auth check failed:', response.status)
+        setUser(null)
       }
     } catch (error) {
       console.error('Auth check failed:', error)
+      setUser(null)
     } finally {
       setLoading(false)
     }

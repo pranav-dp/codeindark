@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
       password: hashedPassword,
       points: 100,
       isActive: true,
+      isAdmin: false,
       lifelines: userLifelines,
       history: {
         lifeline_usage: [],
@@ -60,7 +61,8 @@ export async function POST(request: NextRequest) {
     const token = generateToken({
       userId: newUser._id,
       email: newUser.email,
-      username: newUser.username
+      username: newUser.username,
+      isAdmin: false
     })
 
     const response = NextResponse.json({
@@ -70,6 +72,7 @@ export async function POST(request: NextRequest) {
         username: newUser.username,
         email: newUser.email,
         points: newUser.points,
+        isAdmin: false,
         lifelines: newUser.lifelines
       }
     })

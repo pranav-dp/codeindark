@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
     const token = generateToken({
       userId: user._id,
       email: user.email,
-      username: user.username
+      username: user.username,
+      isAdmin: user.isAdmin || false
     }, rememberMe)
 
     const response = NextResponse.json({
@@ -45,6 +46,7 @@ export async function POST(request: NextRequest) {
         username: user.username,
         email: user.email,
         points: user.points,
+        isAdmin: user.isAdmin || false,
         lifelines: user.lifelines
       }
     })

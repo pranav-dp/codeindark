@@ -19,10 +19,38 @@ export default function Dashboard() {
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && !user) {
+    // Only redirect after loading is complete
+    if (loading) return
+    
+    if (!user) {
       router.push('/')
+    } else if (user.isAdmin) {
+      // Redirect admin directly to admin page
+      router.replace('/admin')
     }
   }, [user, loading, router])
+
+  // Show loading while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
+        <div className="text-white">Loading...</div>
+      </div>
+    )
+  }
+
+  // Don't render dashboard for admin users - they should be redirected
+  if (user && user.isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
+        <div className="text-white">Redirecting to admin...</div>
+      </div>
+    )
+  }
+
+  if (!user) {
+    return null // Will redirect to login
+  }
 
   if (loading) {
     return (
@@ -51,6 +79,15 @@ export default function Dashboard() {
             <p className="text-white/70">Ready to play and earn points?</p>
           </div>
           <div className="flex space-x-3">
+            {user.isAdmin && (
+              <Button 
+                onClick={() => router.push('/admin')}
+                variant="outline"
+                className="bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30"
+              >
+                Admin
+              </Button>
+            )}
             <Button 
               onClick={() => router.push('/leaderboard')}
               variant="outline"

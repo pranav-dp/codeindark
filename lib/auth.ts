@@ -7,6 +7,7 @@ export interface UserPayload {
   userId: string
   email: string
   username: string
+  isAdmin?: boolean
 }
 
 export function generateToken(user: UserPayload, rememberMe = false): string {

@@ -10,7 +10,10 @@ export default function Home() {
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && user) {
+    // Only redirect after loading is complete
+    if (loading) return
+    
+    if (user) {
       router.push('/dashboard')
     }
   }, [user, loading, router])

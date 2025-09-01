@@ -52,7 +52,10 @@ export default function HistoryPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    if (!loading && !user) {
+    // Only redirect after loading is complete
+    if (loading) return
+    
+    if (!user) {
       router.push('/')
     }
   }, [user, loading, router])

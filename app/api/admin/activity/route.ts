@@ -1,0 +1,100 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getDb } from '@/lib/mongodb'
+import { verifyToken } from '@/lib/auth'
+
+const isAdmin = (payload: any) => {
+  return payload.isAdmin === true
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const token = request.cookies.get('auth-token')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
+    }
+
+    const payload = verifyToken(token)
+    if (!payload || !isAdmin(payload)) {
+      return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+    const limit = parseInt(searchParams.get('limit') || '50')
+
+    const db = await getDb()
+    
+    if (userId) {
+      // Get specific user's activity
+      const user = await db.collection('users').findOne({ _id: userId })
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      }
+
+      let activity: any[] = []
+
+      // Combine lifeline and gambling history
+      const lifelineHistory = (user.history?.lifeline_usage || []).map((item: any) => ({
+        ...item,
+        type: 'lifeline',
+        username: user.username,
+        id: `${user._id}_lifeline_${item.timestamp}`
+      }))
+
+      const gamblingHistory = (user.history?.gambling || []).map((item: any) => ({
+        ...item,
+        type: 'gambling',
+        username: user.username,
+        id: `${user._id}_gambling_${item.timestamp}`
+      }))
+
+      activity = [...lifelineHistory, ...gamblingHistory]
+      activity.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      activity = activity.slice(0, limit)
+
+      return NextResponse.json({
+        activity,
+        user: {
+          username: user.username,
+          email: user.email,
+          points: user.points,
+          totalActivity: activity.length
+        }
+      })
+    } else {
+      // Get real-time activity from gamblelog (most recent across all users)
+      const recentActivity = await db.collection('gamblelog')
+        .find({})
+        .sort({ timestamp: -1 })
+        .limit(limit)
+        .toArray()
+
+      // Get user details for each activity
+      const userIds = [...new Set(recentActivity.map(activity => activity.userId))]
+      const users = await db.collection('users')
+        .find({ _id: { $in: userIds } })
+        .project({ _id: 1, username: 1 })
+        .toArray()
+
+      const userMap = users.reduce((map, user) => {
+        map[user._id] = user.username
+        return map
+      }, {} as Record<string, string>)
+
+      const activityWithUsers = recentActivity.map(activity => ({
+        ...activity,
+        username: userMap[activity.userId] || 'Unknown',
+        id: activity._id
+      }))
+
+      return NextResponse.json({
+        activity: activityWithUsers,
+        totalActivities: await db.collection('gamblelog').countDocuments()
+      })
+    }
+
+  } catch (error) {
+    console.error('Admin activity fetch error:', error)
+    return NextResponse.json({ error: 'Failed to fetch activity' }, { status: 500 })
+  }
+}

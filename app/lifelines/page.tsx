@@ -33,7 +33,10 @@ export default function LifelinesPage() {
   const [usingLifeline, setUsingLifeline] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!loading && !user) {
+    // Only redirect after loading is complete
+    if (loading) return
+    
+    if (!user) {
       router.push('/')
     }
   }, [user, loading, router])
