@@ -4,6 +4,15 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Zap, Users, Eye, HelpCircle, RotateCcw } from 'lucide-react'
+
+const lifelineIcons: { [key: string]: any } = {
+  'Skip Question': RotateCcw,
+  'Ask Expert': Users,
+  '50-50': Eye,
+  'Hint': HelpCircle,
+  'Retry': RotateCcw
+}
 
 export default function Dashboard() {
   const { user, loading, logout } = useAuth()
@@ -17,7 +26,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
         <div className="text-white">Loading...</div>
       </div>
     )
@@ -60,20 +69,39 @@ export default function Dashboard() {
         </div>
 
         {/* Lifelines Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          <h3 className="col-span-full text-2xl font-bold text-white mb-4">Your Lifelines</h3>
-          {user.lifelines.map((lifeline) => (
-            <div key={lifeline.lifelineId} className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
-              <h4 className="text-lg font-semibold text-white mb-2">{lifeline.name}</h4>
-              <p className="text-white/70 mb-4">Remaining uses: {lifeline.remaining_uses}</p>
-              <Button 
-                disabled={lifeline.remaining_uses === 0}
-                className="w-full bg-white/20 hover:bg-white/30 text-white border border-white/30"
-              >
-                Use Lifeline
-              </Button>
-            </div>
-          ))}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-2xl font-bold text-white">Your Lifelines</h3>
+            <Button 
+              onClick={() => router.push('/lifelines')}
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+            >
+              View All Lifelines
+            </Button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {user.lifelines.slice(0, 3).map((lifeline) => {
+              const IconComponent = lifelineIcons[lifeline.name] || Zap
+              return (
+                <div key={lifeline.lifelineId} className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                      <IconComponent className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="text-lg font-semibold text-white">{lifeline.name}</h4>
+                  </div>
+                  <p className="text-white/70 mb-4">Remaining: {lifeline.remaining_uses} uses</p>
+                  <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+                    <div 
+                      className="h-full bg-gradient-to-r from-green-400 to-blue-500"
+                      style={{ width: `${(lifeline.remaining_uses / 3) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         {/* Quick Actions */}
