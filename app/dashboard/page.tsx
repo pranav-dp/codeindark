@@ -106,15 +106,21 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 text-center">
-            <h3 className="text-xl font-bold text-white mb-4">🎡 Spin Wheel</h3>
+          <div 
+            onClick={() => router.push('/gambling')}
+            className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 text-center cursor-pointer hover:bg-white/15 transition-all duration-300"
+          >
+            <h3 className="text-xl font-bold text-white mb-4">🎰 Slot Machine</h3>
             <p className="text-white/70 mb-4">Try your luck! 10 points per spin</p>
             <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
-              Spin Now
+              Play Now
             </Button>
           </div>
           
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 text-center">
+          <div 
+            onClick={() => router.push('/gambling')}
+            className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 text-center cursor-pointer hover:bg-white/15 transition-all duration-300"
+          >
             <h3 className="text-xl font-bold text-white mb-4">🎲 Dice Roll</h3>
             <p className="text-white/70 mb-4">Bet your points for big wins!</p>
             <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white">
