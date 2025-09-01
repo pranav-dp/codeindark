@@ -627,12 +627,7 @@ export default function AuthenticationCard() {
                 </p>
               </div>
 
-              <Button
-                onClick={() => window.open("https://www.youtube.com/@diecastbydollar", "_blank")}
-                className="w-full bg-white/20 hover:bg-white/30 text-white border border-white/30 hover:border-white/40 h-11 rounded-xl font-medium transition-all duration-200 backdrop-blur-sm"
-              >
-                Subscribe on YouTube
-              </Button>
+              
             </div>
           )}
         </div>

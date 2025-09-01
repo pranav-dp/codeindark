@@ -50,13 +50,29 @@ export default function Dashboard() {
             <h1 className="text-3xl font-bold text-white">Welcome back, {user.username}!</h1>
             <p className="text-white/70">Ready to play and earn points?</p>
           </div>
-          <Button 
-            onClick={handleLogout}
-            variant="outline"
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20"
-          >
-            Logout
-          </Button>
+          <div className="flex space-x-3">
+            <Button 
+              onClick={() => router.push('/leaderboard')}
+              variant="outline"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              Leaderboard
+            </Button>
+            <Button 
+              onClick={() => router.push('/history')}
+              variant="outline"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              History
+            </Button>
+            <Button 
+              onClick={handleLogout}
+              variant="outline"
+              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+            >
+              Logout
+            </Button>
+          </div>
         </div>
 
         {/* Points Display */}

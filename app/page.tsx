@@ -49,12 +49,12 @@ export default function Home() {
           <p className="text-sm text-white/80 text-center">
             Designed and Developed with <span className="text-white/90">❤️</span> by{" "}
             <a
-              href="https://www.youtube.com/@diecastbydollar"
+              href="github.com/pranav-dp"
               target="_blank"
               rel="noopener noreferrer"
               className="text-white/90 hover:text-white transition-colors duration-200 font-medium"
             >
-              Dollar Gill
+              Pranav D
             </a>
           </p>
         </div>
