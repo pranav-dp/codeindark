@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     const userId = new Date().getTime().toString()
     
     const newUser = {
-      _id: userId,
+      _id: userId as any,
       username: name,
       email,
       password: hashedPassword,
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       user: {
-        id: newUser._id,
+        id: newUser._id.toString(),
         username: newUser.username,
         email: newUser.email,
         points: newUser.points,

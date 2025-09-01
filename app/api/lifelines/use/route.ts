@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const db = await getDb()
     
     // Get user and lifeline details
-    const user = await db.collection('users').findOne({ _id: payload.userId })
+    const user = await db.collection('users').findOne({ _id: payload.userId as any })
     const lifeline = await db.collection('lifelines').findOne({ _id: lifelineId })
 
     if (!user || !lifeline) {
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     await db.collection('users').updateOne(
-      { _id: payload.userId },
+      { _id: payload.userId as any },
       {
         $set: {
           points: newPoints,
@@ -68,14 +68,14 @@ export async function POST(request: NextRequest) {
           updatedAt: new Date()
         },
         $push: {
-          'history.lifeline_usage': historyEntry
+          'history.lifeline_usage': historyEntry as any
         }
       }
     )
 
     // Log in gamblelog collection
     await db.collection('gamblelog').insertOne({
-      _id: new Date().getTime().toString(),
+      _id: new Date().getTime().toString() as any,
       userId: payload.userId,
       game: 'lifeline',
       points_spent: lifeline.point_cost,

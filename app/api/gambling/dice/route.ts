@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     const db = await getDb()
-    const user = await db.collection('users').findOne({ _id: payload.userId })
+    const user = await db.collection('users').findOne({ _id: payload.userId as any })
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -74,21 +74,21 @@ export async function POST(request: NextRequest) {
     }
 
     await db.collection('users').updateOne(
-      { _id: payload.userId },
+      { _id: payload.userId as any },
       {
         $set: {
           points: newPoints,
           updatedAt: new Date()
         },
         $push: {
-          'history.gambling': historyEntry
+          'history.gambling': historyEntry as any
         }
       }
     )
 
     // Log in gamblelog
     await db.collection('gamblelog').insertOne({
-      _id: new Date().getTime().toString(),
+      _id: new Date().getTime().toString() as any,
       userId: payload.userId,
       game: 'dice_roll',
       points_spent: betAmount,

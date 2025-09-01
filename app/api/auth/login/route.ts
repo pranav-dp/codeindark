@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     // Generate token
     const token = generateToken({
-      userId: user._id,
+      userId: user._id.toString(),
       email: user.email,
       username: user.username,
       isAdmin: user.isAdmin || false
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       success: true,
       user: {
-        id: user._id,
+        id: user._id.toString(),
         username: user.username,
         email: user.email,
         points: user.points,

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     const db = await getDb()
     
     // Get user's current lifelines
-    const user = await db.collection('users').findOne({ _id: payload.userId })
+    const user = await db.collection('users').findOne({ _id: payload.userId as any })
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }

@@ -29,14 +29,14 @@ function spinSlots() {
   let outcome = 'lose'
   
   // Check for wins
-  if (PAYOUTS[resultString]) {
-    payout = PAYOUTS[resultString]
+  if ((PAYOUTS as any)[resultString]) {
+    payout = (PAYOUTS as any)[resultString]
     outcome = 'win'
   } else {
     // Check for doubles
     const doubleKey = result[0] + result[1]
-    if (result[0] === result[1] && PAYOUTS[doubleKey]) {
-      payout = PAYOUTS[doubleKey]
+    if (result[0] === result[1] && (PAYOUTS as any)[doubleKey]) {
+      payout = (PAYOUTS as any)[doubleKey]
       outcome = 'small_win'
     }
   }
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     const db = await getDb()
-    const user = await db.collection('users').findOne({ _id: payload.userId })
+    const user = await db.collection('users').findOne({ _id: payload.userId as any })
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
@@ -81,21 +81,21 @@ export async function POST(request: NextRequest) {
     }
 
     await db.collection('users').updateOne(
-      { _id: payload.userId },
+      { _id: payload.userId as any },
       {
         $set: {
           points: newPoints,
           updatedAt: new Date()
         },
         $push: {
-          'history.gambling': historyEntry
+          'history.gambling': historyEntry as any
         }
       }
     )
 
     // Log in gamblelog
     await db.collection('gamblelog').insertOne({
-      _id: new Date().getTime().toString(),
+      _id: new Date().getTime().toString() as any,
       userId: payload.userId,
       game: 'slot_machine',
       points_spent: SLOT_COST,

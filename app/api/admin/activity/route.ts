@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { verifyToken } from '@/lib/auth'
+import { ObjectId } from 'mongodb'
 
 const isAdmin = (payload: any) => {
   return payload.isAdmin === true
@@ -25,8 +26,21 @@ export async function GET(request: NextRequest) {
     const db = await getDb()
     
     if (userId) {
-      // Get specific user's activity
-      const user = await db.collection('users').findOne({ _id: userId })
+      // Get specific user's activity - handle both string and ObjectId formats
+      let user
+      try {
+        // Try as ObjectId first if it looks like one
+        if (ObjectId.isValid(userId)) {
+          user = await db.collection('users').findOne({ _id: new ObjectId(userId) })
+        } else {
+          // Use as string ID
+          user = await db.collection('users').findOne({ _id: userId as any })
+        }
+      } catch {
+        // Fallback to string search
+        user = await db.collection('users').findOne({ _id: userId as any })
+      }
+      
       if (!user) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 })
       }

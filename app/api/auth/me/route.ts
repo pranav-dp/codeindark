@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { verifyToken } from '@/lib/auth'
+import { ObjectId } from 'mongodb'
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +18,20 @@ export async function GET(request: NextRequest) {
     }
 
     const db = await getDb()
-    let user = await db.collection('users').findOne({ _id: payload.userId })
+    let user
+    
+    try {
+      // Try as ObjectId first if it looks like one
+      if (ObjectId.isValid(payload.userId)) {
+        user = await db.collection('users').findOne({ _id: new ObjectId(payload.userId) })
+      } else {
+        // Use as string ID
+        user = await db.collection('users').findOne({ _id: payload.userId as any })
+      }
+    } catch {
+      // Fallback to string search
+      user = await db.collection('users').findOne({ _id: payload.userId as any })
+    }
 
     // Fallback: try finding by username if ID doesn't match
     if (!user) {
@@ -34,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       user: {
-        id: user._id,
+        id: user._id.toString(),
         username: user.username,
         email: user.email,
         points: user.points,
