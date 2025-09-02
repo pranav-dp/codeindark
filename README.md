@@ -83,10 +83,6 @@ NODE_ENV=production
 
 ## 🎮 Usage
 
-### Default Admin Account:
-- **Email**: `pranav@fanpit.live`
-- **Password**: `admin`
-
 ### Game Rules:
 - **Slot Machine**: 10 points per spin, various payouts
 - **Dice Game**: Variable betting, multipliers based on dice result
