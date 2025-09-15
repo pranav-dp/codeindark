@@ -5,7 +5,8 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ArrowLeft, Activity, Users, Zap, Dice1, RotateCcw, Eye, HelpCircle } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { ArrowLeft, Activity, Users, Zap, Dice1, RotateCcw, Eye, HelpCircle, Plus, Minus, Target } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 interface ActivityItem {
@@ -31,6 +32,17 @@ interface User {
   isAdmin?: boolean
 }
 
+interface Powerup {
+  id: string
+  name: string
+  description: string
+  cost: number
+  duration: number
+  instructions: string
+  points_deducted?: number
+  timer_reduction?: number
+}
+
 const activityIcons: { [key: string]: any } = {
   'lifeline': Zap,
   'slot_machine': '🎰',
@@ -45,12 +57,19 @@ const activityIcons: { [key: string]: any } = {
 export default function AdminPage() {
   const { user, loading } = useAuth()
   const router = useRouter()
-  const [view, setView] = useState<'realtime' | 'userwise'>('realtime')
+  const [view, setView] = useState<'realtime' | 'userwise' | 'controls'>('realtime')
   const [activity, setActivity] = useState<ActivityItem[]>([])
   const [users, setUsers] = useState<User[]>([])
   const [selectedUserId, setSelectedUserId] = useState<string>('')
   const [isLoading, setIsLoading] = useState(true)
   const [autoRefresh, setAutoRefresh] = useState(true)
+  
+  // Powerup control states
+  const [againstPowerups, setAgainstPowerups] = useState<Powerup[]>([])
+  const [selectedPowerup, setSelectedPowerup] = useState<string>('')
+  const [targetUserId, setTargetUserId] = useState<string>('')
+  const [pointAmount, setPointAmount] = useState<number>(0)
+  const [pointAction, setPointAction] = useState<'add' | 'subtract'>('add')
 
   // Don't redirect, just show access denied if not admin
   // useEffect(() => {
@@ -64,6 +83,7 @@ export default function AdminPage() {
     if (user && user.isAdmin) {
       fetchUsers()
       fetchActivity()
+      fetchAgainstPowerups()
     }
   }, [user, view, selectedUserId])
 
@@ -77,6 +97,18 @@ export default function AdminPage() {
       return () => clearInterval(interval)
     }
   }, [view, autoRefresh])
+
+  const fetchAgainstPowerups = async () => {
+    try {
+      const response = await fetch('/api/admin/powerups', { credentials: 'include' })
+      if (response.ok) {
+        const data = await response.json()
+        setAgainstPowerups(data.powerups)
+      }
+    } catch (error) {
+      console.error('Failed to fetch powerups:', error)
+    }
+  }
 
   const fetchUsers = async () => {
     try {
@@ -108,7 +140,65 @@ export default function AdminPage() {
     }
   }
 
-  const formatTime = (timestamp: string) => {
+  const triggerPowerup = async () => {
+    if (!selectedPowerup || !targetUserId) return
+    
+    try {
+      const response = await fetch('/api/admin/trigger-powerup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          userId: targetUserId,
+          powerupId: selectedPowerup
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        alert(`${data.powerup.name} triggered on ${data.user.username}!`)
+        fetchUsers() // Refresh user points
+        fetchActivity() // Refresh activity
+      } else {
+        const error = await response.json()
+        alert(`Error: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Failed to trigger powerup:', error)
+      alert('Failed to trigger powerup')
+    }
+  }
+
+  const managePoints = async () => {
+    if (!targetUserId || pointAmount <= 0) return
+    
+    try {
+      const response = await fetch('/api/admin/points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          userId: targetUserId,
+          points: pointAmount,
+          action: pointAction,
+          reason: `Admin ${pointAction} points`
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        alert(data.message)
+        fetchUsers() // Refresh user points
+        setPointAmount(0)
+      } else {
+        const error = await response.json()
+        alert(`Error: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Failed to manage points:', error)
+      alert('Failed to manage points')
+    }
+  }
     const now = new Date()
     const time = new Date(timestamp)
     const diffMs = now.getTime() - time.getTime()
@@ -189,6 +279,17 @@ export default function AdminPage() {
                 <Users className="w-4 h-4 mr-2" />
                 User-wise
               </Button>
+              <Button
+                onClick={() => setView('controls')}
+                size="sm"
+                className={view === 'controls' 
+                  ? 'bg-white/20 text-white' 
+                  : 'bg-transparent text-white/70 hover:text-white'
+                }
+              >
+                <Target className="w-4 h-4 mr-2" />
+                Controls
+              </Button>
             </div>
 
             {view === 'realtime' && (
@@ -248,8 +349,137 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* Controls Panel */}
+        {view === 'controls' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* AGAINST Powerups */}
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+              <h3 className="text-xl font-bold text-white mb-4">⚡ AGAINST Powerups</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-white/80 text-sm mb-2 block">Target User:</label>
+                  <Select value={targetUserId} onValueChange={setTargetUserId}>
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Select user..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-white/20">
+                      {users.filter(u => !u.isAdmin).map((u) => (
+                        <SelectItem key={u.id} value={u.id} className="text-white hover:bg-white/10">
+                          {u.username} ({u.points} pts)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-white/80 text-sm mb-2 block">Powerup:</label>
+                  <Select value={selectedPowerup} onValueChange={setSelectedPowerup}>
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Select powerup..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-white/20">
+                      {againstPowerups.map((p) => (
+                        <SelectItem key={p.id} value={p.id} className="text-white hover:bg-white/10">
+                          {p.name} (-{p.cost}pts)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedPowerup && (
+                  <div className="bg-white/5 rounded-lg p-3">
+                    <p className="text-white/80 text-sm">
+                      {againstPowerups.find(p => p.id === selectedPowerup)?.description}
+                    </p>
+                  </div>
+                )}
+
+                <Button 
+                  onClick={triggerPowerup}
+                  disabled={!selectedPowerup || !targetUserId}
+                  className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 border-red-500/30"
+                >
+                  Trigger Powerup
+                </Button>
+              </div>
+            </div>
+
+            {/* Point Management */}
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+              <h3 className="text-xl font-bold text-white mb-4">💰 Point Management</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-white/80 text-sm mb-2 block">Target User:</label>
+                  <Select value={targetUserId} onValueChange={setTargetUserId}>
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Select user..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-white/20">
+                      {users.filter(u => !u.isAdmin).map((u) => (
+                        <SelectItem key={u.id} value={u.id} className="text-white hover:bg-white/10">
+                          {u.username} ({u.points} pts)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex space-x-2">
+                  <div className="flex bg-white/10 rounded-lg p-1">
+                    <Button
+                      onClick={() => setPointAction('add')}
+                      size="sm"
+                      className={pointAction === 'add' 
+                        ? 'bg-green-500/30 text-green-400' 
+                        : 'bg-transparent text-white/70'
+                      }
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add
+                    </Button>
+                    <Button
+                      onClick={() => setPointAction('subtract')}
+                      size="sm"
+                      className={pointAction === 'subtract' 
+                        ? 'bg-red-500/30 text-red-400' 
+                        : 'bg-transparent text-white/70'
+                      }
+                    >
+                      <Minus className="w-4 h-4 mr-1" />
+                      Subtract
+                    </Button>
+                  </div>
+                  
+                  <Input
+                    type="number"
+                    value={pointAmount}
+                    onChange={(e) => setPointAmount(Number(e.target.value))}
+                    placeholder="Points"
+                    className="bg-white/10 border-white/20 text-white"
+                  />
+                </div>
+
+                <Button 
+                  onClick={managePoints}
+                  disabled={!targetUserId || pointAmount <= 0}
+                  className={`w-full ${pointAction === 'add' 
+                    ? 'bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/30'
+                    : 'bg-red-500/20 hover:bg-red-500/30 text-red-400 border-red-500/30'
+                  }`}
+                >
+                  {pointAction === 'add' ? 'Add' : 'Subtract'} {pointAmount} Points
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Activity Feed */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 p-6">
+        {view !== 'controls' && (
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-white">
               {view === 'realtime' ? '🔴 Live Activity Feed' : `📊 ${selectedUserId ? users.find(u => u.id === selectedUserId)?.username : 'Select User'} Activity`}
@@ -328,7 +558,7 @@ export default function AdminPage() {
               ))}
             </div>
           )}
-        </div>
+        )}
       </div>
     </div>
   )
