@@ -22,6 +22,7 @@ yarn-error.log*
 # notes
 PLAN.md
 idea.md
+new.md
 
 # vercel
 .vercel
@@ -30,3 +31,9 @@ idea.md
 *.tsbuildinfo
 next-env.d.ts
 .env*.local
+
+backup-1757943551714.json
+
+reports
+
+scripts
