@@ -4,9 +4,17 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { ArrowLeft, Coins, Dices } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { ArrowLeft, Coins, Zap, Skull } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { ScratchCard } from 'next-scratchcard'
+
+interface Powerup {
+  _id: string
+  name: string
+  description: string
+  point_cost: number
+}
 
 export default function GamblingPage() {
   const { user, loading, refreshUser } = useAuth()
@@ -18,14 +26,16 @@ export default function GamblingPage() {
   const [slotResult, setSlotResult] = useState(['🍒', '🍒', '🍒'])
   const [slotMessage, setSlotMessage] = useState('')
   
-  // Dice state
-  const [diceRolling, setDiceRolling] = useState(false)
-  const [diceResult, setDiceResult] = useState(1)
-  const [betAmount, setBetAmount] = useState(10)
-  const [diceMessage, setDiceMessage] = useState('')
+  // Scratch Strike state
+  const [selectedCard, setSelectedCard] = useState<number | null>(null)
+  const [scratchResult, setScratchResult] = useState<string | null>(null)
+  const [availablePowerups, setAvailablePowerups] = useState<Powerup[]>([])
+  const [selectedPowerup, setSelectedPowerup] = useState<string>('')
+  const [showPowerupModal, setShowPowerupModal] = useState(false)
+  const [scratchMessage, setScratchMessage] = useState('')
+  const [gameGrid, setGameGrid] = useState<string[]>([])
 
   useEffect(() => {
-    // Only redirect after loading is complete
     if (loading) return
     
     if (!user) {
@@ -66,8 +76,8 @@ export default function GamblingPage() {
         if (response.ok) {
           const data = await response.json()
           setSlotResult(data.result)
-          setSlotMessage(data.message)
           setUserPoints(data.newPoints)
+          setSlotMessage(data.message)
           await refreshUser()
         } else {
           const errorData = await response.json()
@@ -75,61 +85,97 @@ export default function GamblingPage() {
         }
       } catch (error) {
         console.error('Slot machine error:', error)
-        alert('Failed to play slots')
+        alert('Failed to play slot machine')
       } finally {
         setSlotSpinning(false)
       }
     }, spinDuration)
   }
 
-  const rollDice = async () => {
-    if (userPoints < betAmount) {
-      alert('Insufficient points!')
+  const selectCard = async (position: number) => {
+    if (userPoints < 20) {
+      alert('You need at least 20 points to play!')
       return
     }
 
-    if (betAmount <= 0) {
-      alert('Please enter a valid bet amount!')
-      return
-    }
+    try {
+      const response = await fetch('/api/gambling/scratch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ position })
+      })
 
-    setDiceRolling(true)
-    setDiceMessage('')
-    
-    // Animate rolling
-    const rollDuration = 1500
-    const rollInterval = setInterval(() => {
-      setDiceResult(Math.floor(Math.random() * 6) + 1)
-    }, 100)
-
-    setTimeout(async () => {
-      clearInterval(rollInterval)
-      
-      try {
-        const response = await fetch('/api/gambling/dice', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ betAmount })
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          setDiceResult(data.diceResult)
-          setDiceMessage(data.message)
-          setUserPoints(data.newPoints)
-          await refreshUser()
-        } else {
-          const errorData = await response.json()
-          alert(errorData.error)
+      if (response.ok) {
+        const data = await response.json()
+        
+        setSelectedCard(position)
+        setScratchResult(data.result)
+        setGameGrid(data.grid)
+        setUserPoints(data.newPoints)
+        // Don't set message here - wait for scratch completion
+        
+        if (data.result === 'powerup' && data.powerups.length > 0) {
+          setAvailablePowerups(data.powerups)
         }
-      } catch (error) {
-        console.error('Dice roll error:', error)
-        alert('Failed to roll dice')
-      } finally {
-        setDiceRolling(false)
+        
+        await refreshUser()
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error)
       }
-    }, rollDuration)
+    } catch (error) {
+      console.error('Scratch Strike error:', error)
+      alert('Failed to scratch card')
+    }
+  }
+
+  const handleScratchComplete = () => {
+    // Show message only after scratching is complete
+    if (scratchResult === 'powerup') {
+      setScratchMessage('You found a powerup!')
+      if (availablePowerups.length > 0) {
+        setShowPowerupModal(true)
+      }
+    } else {
+      setScratchMessage('Better luck next time!')
+    }
+  }
+
+  const claimPowerup = async () => {
+    if (!selectedPowerup) return
+
+    try {
+      const response = await fetch('/api/gambling/scratch/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ powerupId: selectedPowerup })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        alert(data.message)
+        setShowPowerupModal(false)
+        setSelectedPowerup('')
+        setSelectedCard(null)
+        setScratchResult(null)
+        await refreshUser()
+      } else {
+        const errorData = await response.json()
+        alert(errorData.error)
+      }
+    } catch (error) {
+      console.error('Powerup claim error:', error)
+      alert('Failed to claim powerup')
+    }
+  }
+
+  const resetScratchGame = () => {
+    setSelectedCard(null)
+    setScratchResult(null)
+    setScratchMessage('')
+    setGameGrid([])
   }
 
   if (loading) {
@@ -158,7 +204,7 @@ export default function GamblingPage() {
               Back
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-white">🎰 Gambling Zone</h1>
+              <h1 className="text-3xl font-bold text-white">🎰 Casino</h1>
               <p className="text-white/70">Try your luck and win big!</p>
             </div>
           </div>
@@ -179,13 +225,12 @@ export default function GamblingPage() {
               <p className="text-white/70">10 points per spin</p>
             </div>
 
-            {/* Slot Display */}
             <div className="bg-black/30 rounded-2xl p-6 mb-6">
               <div className="flex justify-center space-x-4 mb-4">
                 {slotResult.map((symbol, index) => (
                   <motion.div
                     key={index}
-                    className="w-20 h-20 bg-white/10 rounded-xl flex items-center justify-center text-4xl"
+                    className="w-20 h-20 bg-white rounded-xl flex items-center justify-center text-3xl"
                     animate={slotSpinning ? { rotateY: 360 } : {}}
                     transition={{ duration: 0.1, repeat: slotSpinning ? Infinity : 0 }}
                   >
@@ -194,109 +239,149 @@ export default function GamblingPage() {
                 ))}
               </div>
               
-              <AnimatePresence>
-                {slotMessage && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="text-center text-white font-semibold"
-                  >
-                    {slotMessage}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {slotMessage && (
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center text-white font-semibold"
+                >
+                  {slotMessage}
+                </motion.p>
+              )}
             </div>
 
             <Button
               onClick={playSlots}
               disabled={slotSpinning || userPoints < 10}
-              className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold text-lg"
+              className="w-full h-12 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold text-lg"
             >
-              {slotSpinning ? 'Spinning...' : 'SPIN (10 points)'}
+              {slotSpinning ? 'Spinning...' : 'Spin (10 pts)'}
             </Button>
-
-            {/* Payout Table */}
-            <div className="mt-6 text-xs text-white/60">
-              <p className="font-semibold mb-2">Payouts:</p>
-              <div className="grid grid-cols-2 gap-1">
-                <span>💎💎💎: 500pts</span>
-                <span>⭐⭐⭐: 200pts</span>
-                <span>🍒🍒🍒: 100pts</span>
-                <span>🍇🍇🍇: 80pts</span>
-                <span>💎💎: 50pts</span>
-                <span>⭐⭐: 30pts</span>
-              </div>
-            </div>
           </div>
 
-          {/* Dice Game */}
+          {/* Scratch Strike */}
           <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 p-8">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">🎲 Dice Roll</h2>
-              <p className="text-white/70">Bet your points for multipliers!</p>
+              <h2 className="text-2xl font-bold text-white mb-2">⚡ Scratch Strike</h2>
+              <p className="text-white/70">20 points per scratch</p>
             </div>
 
-            {/* Dice Display */}
-            <div className="bg-black/30 rounded-2xl p-6 mb-6 text-center">
-              <motion.div
-                className="w-24 h-24 bg-white rounded-xl flex items-center justify-center text-4xl font-bold mx-auto mb-4"
-                animate={diceRolling ? { rotateX: 360, rotateY: 360 } : {}}
-                transition={{ duration: 0.2, repeat: diceRolling ? Infinity : 0 }}
-              >
-                {diceResult}
-              </motion.div>
+            <div className="bg-black/30 rounded-2xl p-6 mb-6">
+              {selectedCard === null ? (
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {Array(9).fill(null).map((_, index) => (
+                    <motion.div
+                      key={index}
+                      className="aspect-square rounded-xl cursor-pointer bg-gradient-to-br from-purple-600 to-purple-800 hover:from-purple-500 hover:to-purple-700 shadow-lg shadow-purple-500/50 flex items-center justify-center text-white text-2xl font-bold"
+                      onClick={() => selectCard(index)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      ?
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <div className="rounded-2xl overflow-hidden mb-4">
+                    <ScratchCard
+                      width={256}
+                      height={256}
+                      finishPercent={70}
+                      brushSize={60}
+                      onComplete={handleScratchComplete}
+                    >
+                      <div 
+                        className="flex items-center justify-center"
+                        style={{
+                          width: '256px',
+                          height: '256px',
+                          background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+                          borderRadius: '16px'
+                        }}
+                      >
+                        <div className="text-8xl">
+                          {scratchResult === 'powerup' ? '⚡' : '💀'}
+                        </div>
+                      </div>
+                    </ScratchCard>
+                  </div>
+                </div>
+              )}
               
-              <AnimatePresence>
-                {diceMessage && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    className="text-white font-semibold"
-                  >
-                    {diceMessage}
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {scratchMessage && (
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-center text-white font-semibold mb-4"
+                >
+                  {scratchMessage}
+                </motion.p>
+              )}
             </div>
 
-            {/* Bet Input */}
-            <div className="mb-6">
-              <label className="block text-white/80 text-sm mb-2">Bet Amount:</label>
-              <Input
-                type="number"
-                value={betAmount}
-                onChange={(e) => setBetAmount(Math.max(1, parseInt(e.target.value) || 1))}
-                min="1"
-                max={userPoints}
-                className="bg-white/10 border-white/20 text-white"
-                disabled={diceRolling}
-              />
-            </div>
-
-            <Button
-              onClick={rollDice}
-              disabled={diceRolling || userPoints < betAmount}
-              className="w-full h-12 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold text-lg"
-            >
-              {diceRolling ? 'Rolling...' : `ROLL (${betAmount} points)`}
-            </Button>
-
-            {/* Multiplier Table */}
-            <div className="mt-6 text-xs text-white/60">
-              <p className="font-semibold mb-2">Multipliers:</p>
-              <div className="grid grid-cols-2 gap-1">
-                <span>🎲 6: 3x win</span>
-                <span>🎲 5: 2x win</span>
-                <span>🎲 4: 1.2x win</span>
-                <span>🎲 3: 0.8x back</span>
-                <span>🎲 2: 0.5x back</span>
-                <span>🎲 1: Lose all</span>
-              </div>
+            <div className="flex space-x-3">
+              <Button
+                onClick={resetScratchGame}
+                className="flex-1 bg-gray-600 hover:bg-gray-700 text-white"
+              >
+                Reset Game
+              </Button>
             </div>
           </div>
         </div>
+
+        {/* Powerup Selection Modal */}
+        <AnimatePresence>
+          {showPowerupModal && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 p-8 max-w-md w-full"
+              >
+                <h3 className="text-2xl font-bold text-white mb-4 text-center">🎉 Choose Your Powerup!</h3>
+                
+                <div className="mb-6">
+                  <Select value={selectedPowerup} onValueChange={setSelectedPowerup}>
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Select a powerup..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-white/20">
+                      {availablePowerups.map((powerup) => (
+                        <SelectItem key={powerup._id} value={powerup._id} className="text-white hover:bg-white/10">
+                          {powerup.name} - {powerup.description}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex space-x-3">
+                  <Button
+                    onClick={() => setShowPowerupModal(false)}
+                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={claimPowerup}
+                    disabled={!selectedPowerup}
+                    className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                  >
+                    Claim Powerup
+                  </Button>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   )
