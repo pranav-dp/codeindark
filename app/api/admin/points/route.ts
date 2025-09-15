@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { verifyToken } from '@/lib/auth'
+import { validateRequest, sanitizeInput } from '@/lib/validation'
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,14 +15,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
     }
 
-    const { userId, points, action, reason } = await request.json()
+    const body = await request.json()
     
-    if (!userId || points === undefined || !action) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+    // Validate input
+    const validationError = validateRequest(body, [
+      { field: 'userId', required: true, type: 'string' },
+      { field: 'points', required: true, type: 'number', min: 1, max: 10000 },
+      { field: 'action', required: true, type: 'string', enum: ['add', 'subtract'] },
+      { field: 'reason', required: false, type: 'string' }
+    ])
+    
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 })
     }
 
-    if (!['add', 'subtract'].includes(action)) {
-      return NextResponse.json({ error: 'Action must be add or subtract' }, { status: 400 })
+    const { userId, points, action, reason } = {
+      userId: sanitizeInput(body.userId),
+      points: sanitizeInput(body.points),
+      action: sanitizeInput(body.action),
+      reason: sanitizeInput(body.reason)
     }
 
     const db = await getDb()

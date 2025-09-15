@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/mongodb'
 import { verifyToken } from '@/lib/auth'
+import { rateLimit } from '@/lib/rate-limit'
 
 const SLOT_COST = 10
 const SLOT_SYMBOLS = ['🍒', '🍋', '🍊', '🍇', '⭐', '💎']
@@ -54,6 +55,15 @@ export async function POST(request: NextRequest) {
     const payload = verifyToken(token)
     if (!payload) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
+    // Rate limiting: 30 spins per minute
+    const rateLimitResult = rateLimit(`slot_${payload.userId}`, 30, 60000)
+    if (!rateLimitResult.success) {
+      return NextResponse.json({ 
+        error: 'Rate limit exceeded. Try again later.',
+        resetTime: rateLimitResult.resetTime
+      }, { status: 429 })
     }
 
     const db = await getDb()
@@ -113,6 +123,7 @@ export async function POST(request: NextRequest) {
       payout,
       outcome,
       newPoints,
+      remaining: rateLimitResult.remaining,
       message: payout > 0 ? `You won ${payout} points!` : 'Better luck next time!'
     })
 

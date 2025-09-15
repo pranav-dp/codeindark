@@ -21,7 +21,9 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const userId = searchParams.get('userId')
-    const limit = parseInt(searchParams.get('limit') || '50')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50'), 200) // Max 200 items
+    const page = Math.max(parseInt(searchParams.get('page') || '1'), 1)
+    const skip = (page - 1) * limit
 
     const db = await getDb()
     
@@ -64,22 +66,33 @@ export async function GET(request: NextRequest) {
 
       activity = [...lifelineHistory, ...gamblingHistory]
       activity.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      activity = activity.slice(0, limit)
+      
+      const total = activity.length
+      activity = activity.slice(skip, skip + limit)
 
       return NextResponse.json({
         activity,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit)
+        },
         user: {
           username: user.username,
           email: user.email,
           points: user.points,
-          totalActivity: activity.length
+          totalActivity: total
         }
       })
     } else {
       // Get real-time activity from gamblelog (most recent across all users)
+      const totalCount = await db.collection('gamblelog').countDocuments()
+      
       const recentActivity = await db.collection('gamblelog')
         .find({})
         .sort({ timestamp: -1 })
+        .skip(skip)
         .limit(limit)
         .toArray()
 
@@ -103,7 +116,13 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         activity: activityWithUsers,
-        totalActivities: await db.collection('gamblelog').countDocuments()
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit)
+        },
+        totalActivities: totalCount
       })
     }
 
