@@ -17,36 +17,41 @@ export async function GET(request: NextRequest) {
 
     const db = await getDb()
     
-    // Get user's current lifelines
+    // Get user's current powerups
     const user = await db.collection('users').findOne({ _id: payload.userId as any })
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Get lifeline details from lifelines collection
-    const lifelineDetails = await db.collection('lifelines').find({ isActive: true }).toArray()
+    // Get FOR powerups only (user-accessible)
+    const powerupDetails = await db.collection('lifelines').find({ 
+      isActive: true, 
+      type: 'FOR' 
+    }).toArray()
     
-    // Merge user's remaining uses with lifeline details
-    const userLifelines = user.lifelines.map((userLifeline: any) => {
-      const details = lifelineDetails.find(l => l._id === userLifeline.lifelineId)
+    // Merge user's remaining uses with powerup details
+    const userPowerups = user.lifelines.map((userPowerup: any) => {
+      const details = powerupDetails.find(p => p._id === userPowerup.lifelineId)
       return {
-        id: userLifeline.lifelineId,
-        name: userLifeline.name,
+        id: userPowerup.lifelineId,
+        name: userPowerup.name,
         description: details?.description || '',
         cost: details?.point_cost || 0,
         maxUses: details?.max_uses || 0,
-        remainingUses: userLifeline.remaining_uses,
-        canUse: userLifeline.remaining_uses > 0 && user.points >= (details?.point_cost || 0)
+        remainingUses: userPowerup.remaining_uses,
+        duration: details?.duration_seconds || 0,
+        type: details?.type || 'FOR',
+        canUse: userPowerup.remaining_uses > 0 && user.points >= (details?.point_cost || 0)
       }
     })
 
     return NextResponse.json({
-      lifelines: userLifelines,
+      powerups: userPowerups,
       userPoints: user.points
     })
 
   } catch (error) {
-    console.error('Lifelines fetch error:', error)
-    return NextResponse.json({ error: 'Failed to fetch lifelines' }, { status: 500 })
+    console.error('Powerups fetch error:', error)
+    return NextResponse.json({ error: 'Failed to fetch powerups' }, { status: 500 })
   }
 }

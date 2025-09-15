@@ -14,48 +14,53 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    const { lifelineId } = await request.json()
-    if (!lifelineId) {
-      return NextResponse.json({ error: 'Lifeline ID required' }, { status: 400 })
+    const { powerupId } = await request.json()
+    if (!powerupId) {
+      return NextResponse.json({ error: 'Powerup ID required' }, { status: 400 })
     }
 
     const db = await getDb()
     
-    // Get user and lifeline details
+    // Get user and powerup details
     const user = await db.collection('users').findOne({ _id: payload.userId as any })
-    const lifeline = await db.collection('lifelines').findOne({ _id: lifelineId })
+    const powerup = await db.collection('lifelines').findOne({ _id: powerupId })
 
-    if (!user || !lifeline) {
-      return NextResponse.json({ error: 'User or lifeline not found' }, { status: 404 })
+    if (!user || !powerup) {
+      return NextResponse.json({ error: 'User or powerup not found' }, { status: 404 })
     }
 
-    // Find user's lifeline
-    const userLifeline = user.lifelines.find((l: any) => l.lifelineId === lifelineId)
-    if (!userLifeline) {
-      return NextResponse.json({ error: 'Lifeline not available to user' }, { status: 400 })
+    // Only allow FOR type powerups for users
+    if (powerup.type !== 'FOR' || !powerup.isActive) {
+      return NextResponse.json({ error: 'Powerup not available' }, { status: 400 })
     }
 
-    // Check if user can use lifeline
-    if (userLifeline.remaining_uses <= 0) {
-      return NextResponse.json({ error: 'No remaining uses for this lifeline' }, { status: 400 })
+    // Find user's powerup
+    const userPowerup = user.lifelines.find((l: any) => l.lifelineId === powerupId)
+    if (!userPowerup) {
+      return NextResponse.json({ error: 'Powerup not available to user' }, { status: 400 })
     }
 
-    if (user.points < lifeline.point_cost) {
+    // Check if user can use powerup
+    if (userPowerup.remaining_uses <= 0) {
+      return NextResponse.json({ error: 'No remaining uses for this powerup' }, { status: 400 })
+    }
+
+    if (user.points < powerup.point_cost) {
       return NextResponse.json({ error: 'Insufficient points' }, { status: 400 })
     }
 
     // Update user: deduct points, reduce remaining uses, add to history
-    const newPoints = user.points - lifeline.point_cost
-    const updatedLifelines = user.lifelines.map((l: any) => 
-      l.lifelineId === lifelineId 
+    const newPoints = user.points - powerup.point_cost
+    const updatedPowerups = user.lifelines.map((l: any) => 
+      l.lifelineId === powerupId 
         ? { ...l, remaining_uses: l.remaining_uses - 1 }
         : l
     )
 
     const historyEntry = {
-      lifelineId,
-      name: lifeline.name,
-      points_spent: lifeline.point_cost,
+      lifelineId: powerupId,
+      name: powerup.name,
+      points_spent: powerup.point_cost,
       timestamp: new Date()
     }
 
@@ -64,7 +69,7 @@ export async function POST(request: NextRequest) {
       {
         $set: {
           points: newPoints,
-          lifelines: updatedLifelines,
+          lifelines: updatedPowerups,
           updatedAt: new Date()
         },
         $push: {
@@ -77,25 +82,34 @@ export async function POST(request: NextRequest) {
     await db.collection('gamblelog').insertOne({
       _id: new Date().getTime().toString() as any,
       userId: payload.userId,
-      game: 'lifeline',
-      points_spent: lifeline.point_cost,
+      game: 'powerup',
+      points_spent: powerup.point_cost,
       outcome: 'used',
       details: {
-        lifelineName: lifeline.name,
-        lifelineId
+        powerupName: powerup.name,
+        powerupId,
+        type: powerup.type,
+        duration: powerup.duration_seconds
       },
       timestamp: new Date()
     })
 
     return NextResponse.json({
       success: true,
+      powerup: {
+        id: powerupId,
+        name: powerup.name,
+        type: powerup.type,
+        duration: powerup.duration_seconds,
+        instructions: powerup.special_instructions
+      },
       newPoints,
-      message: `${lifeline.name} used successfully!`,
-      remainingUses: userLifeline.remaining_uses - 1
+      remainingUses: userPowerup.remaining_uses - 1,
+      message: `${powerup.name} activated!`
     })
 
   } catch (error) {
-    console.error('Use lifeline error:', error)
-    return NextResponse.json({ error: 'Failed to use lifeline' }, { status: 500 })
+    console.error('Use powerup error:', error)
+    return NextResponse.json({ error: 'Failed to use powerup' }, { status: 500 })
   }
 }
