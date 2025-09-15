@@ -30,20 +30,24 @@ export async function GET(request: NextRequest) {
     }).toArray()
     
     // Merge user's remaining uses with powerup details
-    const userPowerups = user.lifelines.map((userPowerup: any) => {
-      const details = powerupDetails.find(p => p._id === userPowerup.lifelineId)
-      return {
-        id: userPowerup.lifelineId,
-        name: userPowerup.name,
-        description: details?.description || '',
-        cost: details?.point_cost || 0,
-        maxUses: details?.max_uses || 0,
-        remainingUses: userPowerup.remaining_uses,
-        duration: details?.duration_seconds || 0,
-        type: details?.type || 'FOR',
-        canUse: userPowerup.remaining_uses > 0 && user.points >= (details?.point_cost || 0)
-      }
-    })
+    const userPowerups = user.lifelines
+      .map((userPowerup: any) => {
+        const details = powerupDetails.find(p => p._id === userPowerup.lifelineId)
+        if (!details || details.type !== 'FOR') return null // Skip if not FOR type or not found
+        
+        return {
+          id: userPowerup.lifelineId,
+          name: userPowerup.name,
+          description: details.description || '',
+          cost: details.point_cost || 0,
+          maxUses: details.max_uses || 0,
+          remainingUses: userPowerup.remaining_uses,
+          duration: details.duration_seconds || 0,
+          type: details.type,
+          canUse: userPowerup.remaining_uses > 0 && user.points >= (details.point_cost || 0)
+        }
+      })
+      .filter(Boolean) // Remove null entries
 
     return NextResponse.json({
       powerups: userPowerups,

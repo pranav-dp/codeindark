@@ -26,7 +26,7 @@ new.md
 
 # vercel
 .vercel
-
+scripts
 # typescript
 *.tsbuildinfo
 next-env.d.ts
@@ -36,4 +36,5 @@ backup-1757943551714.json
 
 reports
 
-scripts
+scriptschat.json
+chat.json

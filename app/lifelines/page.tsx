@@ -141,7 +141,7 @@ export default function LifelinesPage() {
 
         {/* Powerups Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {powerups.map((powerup) => {
+          {powerups.filter(powerup => powerup.type === 'FOR').map((powerup) => {
             const IconComponent = powerupIcons[powerup.name] || Zap
             const isUsing = usingPowerup === powerup.id
             
