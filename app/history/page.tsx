@@ -93,7 +93,8 @@ export default function HistoryPage() {
       const IconComponent = lifelineIcons[item.name || ''] || Zap
       return <IconComponent className="w-5 h-5" />
     } else {
-      return item.game === 'dice_roll' ? <Dice1 className="w-5 h-5" /> : <span className="text-lg">🎰</span>
+      return item.game === 'scratch_strike' ? <span className="text-lg">⚡</span> :
+             item.game === 'dice_roll' ? <Dice1 className="w-5 h-5" /> : <span className="text-lg">🎰</span>
     }
   }
 
@@ -243,6 +244,7 @@ export default function HistoryPage() {
                       <div>
                         <h4 className="text-white font-semibold">
                           {item.type === 'lifeline' ? item.name : 
+                           item.game === 'scratch_strike' ? 'Scratch Strike' :
                            item.game === 'dice_roll' ? 'Dice Roll' : 'Slot Machine'}
                         </h4>
                         <p className="text-white/60 text-sm">{formatDate(item.timestamp)}</p>
@@ -254,7 +256,7 @@ export default function HistoryPage() {
                         <p className="text-red-400 font-semibold">-{item.points_spent} pts</p>
                       ) : (
                         <div>
-                          <p className="text-red-400 text-sm">-{item.points_bet} pts</p>
+                          <p className="text-red-400 text-sm">-{item.points_spent || item.points_bet} pts</p>
                           {item.points_won! > 0 && (
                             <p className="text-green-400 font-semibold">+{item.points_won} pts</p>
                           )}

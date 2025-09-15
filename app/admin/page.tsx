@@ -59,6 +59,7 @@ const activityIcons: { [key: string]: any } = {
   'Time drain': Timer,
   // Games and general
   'slot_machine': '🎰',
+  'scratch_strike': '⚡',
   'dice_roll': Dice1,
   'powerup': Zap,
   'lifeline': Zap,
@@ -249,6 +250,8 @@ export default function AdminPage() {
     // Fallback to game type
     if (item.game === 'slot_machine') {
       return <span className="text-lg">🎰</span>
+    } else if (item.game === 'scratch_strike') {
+      return <span className="text-lg">⚡</span>
     } else if (item.game === 'dice_roll') {
       return <Dice1 className="w-5 h-5" />
     } else if (item.type === 'powerup' || item.type === 'lifeline' || item.game === 'powerup') {
@@ -263,6 +266,7 @@ export default function AdminPage() {
   const getActivityColor = (item: ActivityItem) => {
     if (item.type === 'lifeline' || item.type === 'powerup' || item.game === 'powerup') return 'from-purple-500 to-pink-500'
     if (item.type === 'admin_powerup' || item.game === 'admin_powerup') return 'from-red-500 to-orange-500'
+    if (item.game === 'scratch_strike') return 'from-purple-500 to-pink-500'
     if (item.outcome === 'win' || item.outcome === 'big_win') return 'from-green-500 to-emerald-500'
     if (item.outcome === 'lose') return 'from-red-500 to-rose-500'
     return 'from-blue-500 to-cyan-500'
@@ -566,6 +570,7 @@ export default function AdminPage() {
                                item.type === 'admin_powerup' ? `Admin: ${item.name}` :
                                item.game === 'powerup' ? (item as any).details?.powerupName || 'Powerup' :
                                item.game === 'admin_powerup' ? `Admin: ${(item as any).details?.powerupName || 'Admin Action'}` :
+                               item.game === 'scratch_strike' ? 'Scratch Strike' :
                                item.game === 'dice_roll' ? 'Dice Roll' : 'Slot Machine'}
                             </span>
                           </div>
@@ -575,7 +580,7 @@ export default function AdminPage() {
 
                       <div className="text-right">
                         {item.type === 'lifeline' || item.type === 'powerup' || item.type === 'admin_powerup' || 
-                         item.game === 'powerup' || item.game === 'admin_powerup' ? (
+                         item.game === 'powerup' || item.game === 'admin_powerup' || item.game === 'scratch_strike' ? (
                           <p className="text-red-400 font-semibold">-{item.points_spent} pts</p>
                         ) : (
                           <div>

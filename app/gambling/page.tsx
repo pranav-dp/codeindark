@@ -296,7 +296,7 @@ export default function GamblingPage() {
                         style={{
                           width: '256px',
                           height: '256px',
-                          background: 'linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)',
+                          background: 'linear-gradient(135deg, #8b5cf6 0%, #000000 100%)',
                           borderRadius: '16px'
                         }}
                       >
