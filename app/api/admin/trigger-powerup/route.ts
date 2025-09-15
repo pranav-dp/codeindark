@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
             points_spent: totalPointsDeducted,
             timestamp: new Date(),
             admin_triggered: true
-          }
+          } as any
         }
       }
     )

@@ -4,33 +4,37 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { ArrowLeft, Zap, Users, Eye, HelpCircle, RotateCcw } from 'lucide-react'
+import { ArrowLeft, Zap, Search, Clock, Tag, RotateCcw, Eye } from 'lucide-react'
 
-interface Lifeline {
+interface Powerup {
   id: string
   name: string
   description: string
   cost: number
   maxUses: number
   remainingUses: number
+  duration: number
+  type: string
   canUse: boolean
 }
 
-const lifelineIcons: { [key: string]: any } = {
-  'Skip Question': RotateCcw,
-  'Ask Expert': Users,
-  '50-50': Eye,
-  'Hint': HelpCircle,
-  'Retry': RotateCcw
+const powerupIcons: { [key: string]: any } = {
+  'Search Sprint': Search,
+  'Time Warp (30s)': Clock,
+  'Time Warp (60s)': Clock,
+  'Time Warp (90s)': Clock,
+  'Tag Whisper': Tag,
+  'Reincarnation': RotateCcw,
+  'Screen Flash': Eye
 }
 
 export default function LifelinesPage() {
   const { user, loading, refreshUser } = useAuth()
   const router = useRouter()
-  const [lifelines, setLifelines] = useState<Lifeline[]>([])
+  const [powerups, setPowerups] = useState<Powerup[]>([])
   const [userPoints, setUserPoints] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
-  const [usingLifeline, setUsingLifeline] = useState<string | null>(null)
+  const [usingPowerup, setUsingPowerup] = useState<string | null>(null)
 
   useEffect(() => {
     // Only redirect after loading is complete
@@ -43,11 +47,11 @@ export default function LifelinesPage() {
 
   useEffect(() => {
     if (user) {
-      fetchLifelines()
+      fetchPowerups()
     }
   }, [user])
 
-  const fetchLifelines = async () => {
+  const fetchPowerups = async () => {
     try {
       const response = await fetch('/api/lifelines', {
         credentials: 'include'
@@ -55,44 +59,44 @@ export default function LifelinesPage() {
       
       if (response.ok) {
         const data = await response.json()
-        setLifelines(data.lifelines)
+        setPowerups(data.powerups)
         setUserPoints(data.userPoints)
       }
     } catch (error) {
-      console.error('Failed to fetch lifelines:', error)
+      console.error('Failed to fetch powerups:', error)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const useLifeline = async (lifelineId: string) => {
-    setUsingLifeline(lifelineId)
+  const usePowerup = async (powerupId: string) => {
+    setUsingPowerup(powerupId)
     
     try {
       const response = await fetch('/api/lifelines/use', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ lifelineId })
+        body: JSON.stringify({ powerupId })
       })
 
       if (response.ok) {
         const data = await response.json()
         setUserPoints(data.newPoints)
         await refreshUser()
-        await fetchLifelines()
+        await fetchPowerups()
         
-        // Show success message (you can add toast here)
-        alert(data.message)
+        // Show success message with powerup details
+        alert(`${data.powerup.name} activated! ${data.message}`)
       } else {
         const errorData = await response.json()
         alert(errorData.error)
       }
     } catch (error) {
-      console.error('Failed to use lifeline:', error)
-      alert('Failed to use lifeline')
+      console.error('Failed to use powerup:', error)
+      alert('Failed to use powerup')
     } finally {
-      setUsingLifeline(null)
+      setUsingPowerup(null)
     }
   }
 
@@ -122,8 +126,8 @@ export default function LifelinesPage() {
               Back
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-white">Lifelines</h1>
-              <p className="text-white/70">Use your points to get help</p>
+              <h1 className="text-3xl font-bold text-white">⚡ Powerups</h1>
+              <p className="text-white/70">Use your points to activate powerups</p>
             </div>
           </div>
           
@@ -135,17 +139,17 @@ export default function LifelinesPage() {
           </div>
         </div>
 
-        {/* Lifelines Grid */}
+        {/* Powerups Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {lifelines.map((lifeline) => {
-            const IconComponent = lifelineIcons[lifeline.name] || Zap
-            const isUsing = usingLifeline === lifeline.id
+          {powerups.map((powerup) => {
+            const IconComponent = powerupIcons[powerup.name] || Zap
+            const isUsing = usingPowerup === powerup.id
             
             return (
               <div
-                key={lifeline.id}
+                key={powerup.id}
                 className={`bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 p-6 transition-all duration-300 ${
-                  lifeline.canUse ? 'hover:bg-white/15 hover:border-white/30' : 'opacity-60'
+                  powerup.canUse ? 'hover:bg-white/15 hover:border-white/30' : 'opacity-60'
                 }`}
               >
                 <div className="flex items-center space-x-3 mb-4">
@@ -153,45 +157,49 @@ export default function LifelinesPage() {
                     <IconComponent className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white">{lifeline.name}</h3>
-                    <p className="text-white/60 text-sm">{lifeline.cost} points</p>
+                    <h3 className="text-lg font-semibold text-white">{powerup.name}</h3>
+                    <p className="text-white/60 text-sm">{powerup.cost} points</p>
                   </div>
                 </div>
 
-                <p className="text-white/70 text-sm mb-4">{lifeline.description}</p>
+                <p className="text-white/70 text-sm mb-2">{powerup.description}</p>
+                
+                {powerup.duration > 0 && (
+                  <p className="text-blue-400 text-xs mb-4">Duration: {powerup.duration}s</p>
+                )}
 
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-white/60 text-sm">
-                    Uses: {lifeline.remainingUses}/{lifeline.maxUses}
+                    Uses: {powerup.remainingUses}/{powerup.maxUses}
                   </span>
                   <div className="w-16 h-2 bg-white/20 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-green-400 to-blue-500 transition-all duration-300"
-                      style={{ width: `${(lifeline.remainingUses / lifeline.maxUses) * 100}%` }}
+                      style={{ width: `${(powerup.remainingUses / powerup.maxUses) * 100}%` }}
                     />
                   </div>
                 </div>
 
                 <Button
-                  onClick={() => useLifeline(lifeline.id)}
-                  disabled={!lifeline.canUse || isUsing}
+                  onClick={() => usePowerup(powerup.id)}
+                  disabled={!powerup.canUse || isUsing}
                   className={`w-full h-11 rounded-xl font-medium transition-all duration-200 ${
-                    lifeline.canUse
+                    powerup.canUse
                       ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
                       : 'bg-white/10 text-white/50 cursor-not-allowed'
                   }`}
                 >
-                  {isUsing ? 'Using...' : lifeline.canUse ? 'Use Lifeline' : 
-                   lifeline.remainingUses === 0 ? 'No Uses Left' : 'Not Enough Points'}
+                  {isUsing ? 'Activating...' : powerup.canUse ? 'Activate Powerup' : 
+                   powerup.remainingUses === 0 ? 'No Uses Left' : 'Not Enough Points'}
                 </Button>
               </div>
             )
           })}
         </div>
 
-        {lifelines.length === 0 && (
+        {powerups.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-white/60">No lifelines available</p>
+            <p className="text-white/60">No powerups available</p>
           </div>
         )}
       </div>

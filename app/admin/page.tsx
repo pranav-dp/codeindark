@@ -6,12 +6,12 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { ArrowLeft, Activity, Users, Zap, Dice1, RotateCcw, Eye, HelpCircle, Plus, Minus, Target } from 'lucide-react'
+import { ArrowLeft, Activity, Users, Zap, Dice1, Plus, Minus, Target, Search, Clock, Tag, RotateCcw, Eye, Shield, Timer, Flame } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 interface ActivityItem {
   id: string
-  type?: 'lifeline' | 'gambling'
+  type?: 'lifeline' | 'gambling' | 'powerup' | 'admin_powerup'
   game?: string
   username: string
   timestamp: string
@@ -44,14 +44,25 @@ interface Powerup {
 }
 
 const activityIcons: { [key: string]: any } = {
-  'lifeline': Zap,
+  // New FOR powerups
+  'Search Sprint': Search,
+  'Time Warp (30s)': Clock,
+  'Time Warp (60s)': Clock,
+  'Time Warp (90s)': Clock,
+  'Tag Whisper': Tag,
+  'Reincarnation': RotateCcw,
+  'Screen Flash': Eye,
+  // AGAINST powerups
+  'Freeze Frame': Shield,
+  'Lifelinophobia': Shield,
+  'Point burn': Flame,
+  'Time drain': Timer,
+  // Games and general
   'slot_machine': '🎰',
   'dice_roll': Dice1,
-  'Skip Question': RotateCcw,
-  'Ask Expert': Users,
-  '50-50': Eye,
-  'Hint': HelpCircle,
-  'Retry': RotateCcw
+  'powerup': Zap,
+  'lifeline': Zap,
+  'admin_powerup': Target
 }
 
 export default function AdminPage() {
@@ -70,14 +81,6 @@ export default function AdminPage() {
   const [targetUserId, setTargetUserId] = useState<string>('')
   const [pointAmount, setPointAmount] = useState<number>(0)
   const [pointAction, setPointAction] = useState<'add' | 'subtract'>('add')
-
-  // Don't redirect, just show access denied if not admin
-  // useEffect(() => {
-  //   if (loading) return
-  //   if (!user || !user.isAdmin) {
-  //     router.replace('/')
-  //   }
-  // }, [user, loading, router])
 
   useEffect(() => {
     if (user && user.isAdmin) {
@@ -199,6 +202,8 @@ export default function AdminPage() {
       alert('Failed to manage points')
     }
   }
+
+  const formatTime = (timestamp: string) => {
     const now = new Date()
     const time = new Date(timestamp)
     const diffMs = now.getTime() - time.getTime()
@@ -211,18 +216,31 @@ export default function AdminPage() {
   }
 
   const getActivityIcon = (item: ActivityItem) => {
-    if (item.type === 'lifeline') {
-      const IconComponent = activityIcons[item.name || ''] || Zap
-      return <IconComponent className="w-5 h-5" />
-    } else if (item.game === 'slot_machine') {
-      return <span className="text-lg">🎰</span>
-    } else {
-      return <Dice1 className="w-5 h-5" />
+    // Check for specific powerup/lifeline names first
+    if (item.name && activityIcons[item.name]) {
+      const IconComponent = activityIcons[item.name]
+      return typeof IconComponent === 'string' ? 
+        <span className="text-lg">{IconComponent}</span> : 
+        <IconComponent className="w-5 h-5" />
     }
+    
+    // Fallback to game type
+    if (item.game === 'slot_machine') {
+      return <span className="text-lg">🎰</span>
+    } else if (item.game === 'dice_roll') {
+      return <Dice1 className="w-5 h-5" />
+    } else if (item.type === 'powerup' || item.type === 'lifeline') {
+      return <Zap className="w-5 h-5" />
+    } else if (item.type === 'admin_powerup') {
+      return <Target className="w-5 h-5" />
+    }
+    
+    return <Zap className="w-5 h-5" />
   }
 
   const getActivityColor = (item: ActivityItem) => {
-    if (item.type === 'lifeline') return 'from-purple-500 to-pink-500'
+    if (item.type === 'lifeline' || item.type === 'powerup') return 'from-purple-500 to-pink-500'
+    if (item.type === 'admin_powerup') return 'from-red-500 to-orange-500'
     if (item.outcome === 'win' || item.outcome === 'big_win') return 'from-green-500 to-emerald-500'
     if (item.outcome === 'lose') return 'from-red-500 to-rose-500'
     return 'from-blue-500 to-cyan-500'
@@ -312,11 +330,9 @@ export default function AdminPage() {
                     method: 'POST', 
                     credentials: 'include' 
                   })
-                  // Force redirect to login page
                   window.location.href = '/'
                 } catch (error) {
                   console.error('Logout failed:', error)
-                  // Force redirect anyway
                   window.location.href = '/'
                 }
               }}
@@ -327,27 +343,6 @@ export default function AdminPage() {
             </Button>
           </div>
         </div>
-
-        {/* User Selection for User-wise View */}
-        {view === 'userwise' && (
-          <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 mb-6">
-            <div className="flex items-center space-x-4">
-              <label className="text-white font-semibold">Select User:</label>
-              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-                <SelectTrigger className="w-64 bg-white/10 border-white/20 text-white">
-                  <SelectValue placeholder="Choose a user..." />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-900 border-white/20">
-                  {users.filter(user => !user.isAdmin).map((user) => (
-                    <SelectItem key={user.id} value={user.id} className="text-white hover:bg-white/10">
-                      {user.username} ({user.points} pts)
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        )}
 
         {/* Controls Panel */}
         {view === 'controls' && (
@@ -478,86 +473,110 @@ export default function AdminPage() {
           </div>
         )}
 
+        {/* User Selection for User-wise View */}
+        {view === 'userwise' && (
+          <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 mb-6">
+            <div className="flex items-center space-x-4">
+              <label className="text-white font-semibold">Select User:</label>
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger className="w-64 bg-white/10 border-white/20 text-white">
+                  <SelectValue placeholder="Choose a user..." />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-white/20">
+                  {users.filter(user => !user.isAdmin).map((user) => (
+                    <SelectItem key={user.id} value={user.id} className="text-white hover:bg-white/10">
+                      {user.username} ({user.points} pts)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
         {/* Activity Feed */}
         {view !== 'controls' && (
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-white">
-              {view === 'realtime' ? '🔴 Live Activity Feed' : `📊 ${selectedUserId ? users.find(u => u.id === selectedUserId)?.username : 'Select User'} Activity`}
-            </h3>
-            <Button
-              onClick={fetchActivity}
-              size="sm"
-              className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400"
-            >
-              Refresh
-            </Button>
-          </div>
-          
-          {activity.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-white/60">
-                {view === 'userwise' && !selectedUserId 
-                  ? 'Select a user to view their activity' 
-                  : 'No recent activity'
-                }
-              </p>
+          <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-white">
+                {view === 'realtime' ? '🔴 Live Activity Feed' : `📊 ${selectedUserId ? users.find(u => u.id === selectedUserId)?.username : 'Select User'} Activity`}
+              </h3>
+              <Button
+                onClick={fetchActivity}
+                size="sm"
+                className="bg-blue-500/20 hover:bg-blue-500/30 text-blue-400"
+              >
+                Refresh
+              </Button>
             </div>
-          ) : (
-            <div className="space-y-3 max-h-96 overflow-y-auto">
-              {activity.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.02 }}
-                  className="bg-white/5 rounded-2xl p-4 border border-white/10"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-10 h-10 bg-gradient-to-br ${getActivityColor(item)} rounded-xl flex items-center justify-center`}>
-                        {getActivityIcon(item)}
-                      </div>
-                      
-                      <div>
-                        <div className="flex items-center space-x-2">
-                          <h4 className="text-white font-semibold">{item.username}</h4>
-                          <span className="text-white/40">•</span>
-                          <span className="text-white/60 text-sm">
-                            {item.type === 'lifeline' ? item.name : 
-                             item.game === 'dice_roll' ? 'Dice Roll' : 'Slot Machine'}
-                          </span>
+            
+            {activity.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-white/60">
+                  {view === 'userwise' && !selectedUserId 
+                    ? 'Select a user to view their activity' 
+                    : 'No recent activity'
+                  }
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {activity.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.02 }}
+                    className="bg-white/5 rounded-2xl p-4 border border-white/10"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <div className={`w-10 h-10 bg-gradient-to-br ${getActivityColor(item)} rounded-xl flex items-center justify-center`}>
+                          {getActivityIcon(item)}
                         </div>
-                        <p className="text-white/40 text-xs">{formatTime(item.timestamp)}</p>
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      {item.type === 'lifeline' ? (
-                        <p className="text-red-400 font-semibold">-{item.points_spent} pts</p>
-                      ) : (
+                        
                         <div>
-                          <p className="text-red-400 text-sm">-{item.points_bet || item.points_spent} pts</p>
-                          {item.points_won! > 0 && (
-                            <p className="text-green-400 font-semibold">+{item.points_won} pts</p>
-                          )}
-                          {item.game === 'dice_roll' && (
-                            <p className="text-white/60 text-xs">🎲 {item.dice_result}</p>
-                          )}
-                          {item.outcome && (
-                            <p className={`text-xs ${
-                              item.outcome === 'win' || item.outcome === 'big_win' ? 'text-green-400' : 'text-red-400'
-                            }`}>
-                              {item.outcome.replace('_', ' ')}
-                            </p>
-                          )}
+                          <div className="flex items-center space-x-2">
+                            <h4 className="text-white font-semibold">{item.username}</h4>
+                            <span className="text-white/40">•</span>
+                            <span className="text-white/60 text-sm">
+                              {item.type === 'lifeline' || item.type === 'powerup' ? item.name : 
+                               item.type === 'admin_powerup' ? `Admin: ${item.name}` :
+                               item.game === 'dice_roll' ? 'Dice Roll' : 'Slot Machine'}
+                            </span>
+                          </div>
+                          <p className="text-white/40 text-xs">{formatTime(item.timestamp)}</p>
                         </div>
-                      )}
+                      </div>
+
+                      <div className="text-right">
+                        {item.type === 'lifeline' || item.type === 'powerup' || item.type === 'admin_powerup' ? (
+                          <p className="text-red-400 font-semibold">-{item.points_spent} pts</p>
+                        ) : (
+                          <div>
+                            <p className="text-red-400 text-sm">-{item.points_bet || item.points_spent} pts</p>
+                            {item.points_won! > 0 && (
+                              <p className="text-green-400 font-semibold">+{item.points_won} pts</p>
+                            )}
+                            {item.game === 'dice_roll' && (
+                              <p className="text-white/60 text-xs">🎲 {item.dice_result}</p>
+                            )}
+                            {item.outcome && (
+                              <p className={`text-xs ${
+                                item.outcome === 'win' || item.outcome === 'big_win' ? 'text-green-400' : 'text-red-400'
+                              }`}>
+                                {item.outcome.replace('_', ' ')}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          )}
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
