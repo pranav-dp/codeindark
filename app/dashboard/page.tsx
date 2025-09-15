@@ -4,14 +4,16 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Zap, Users, Eye, HelpCircle, RotateCcw } from 'lucide-react'
+import { Zap, Search, Clock, Tag, RotateCcw, Eye } from 'lucide-react'
 
-const lifelineIcons: { [key: string]: any } = {
-  'Skip Question': RotateCcw,
-  'Ask Expert': Users,
-  '50-50': Eye,
-  'Hint': HelpCircle,
-  'Retry': RotateCcw
+const powerupIcons: { [key: string]: any } = {
+  'Search Sprint': Search,
+  'Time Warp (30s)': Clock,
+  'Time Warp (60s)': Clock,
+  'Time Warp (90s)': Clock,
+  'Tag Whisper': Tag,
+  'Reincarnation': RotateCcw,
+  'Screen Flash': Eye
 }
 
 export default function Dashboard() {
@@ -117,38 +119,38 @@ export default function Dashboard() {
           <div className="text-center">
             <h2 className="text-xl text-white/80 mb-2">Your Points</h2>
             <div className="text-5xl font-bold text-white mb-2">{user.points}</div>
-            <p className="text-white/60">Use points for lifelines or try your luck gambling!</p>
+            <p className="text-white/60">Use points for powerups or try your luck gambling!</p>
           </div>
         </div>
 
-        {/* Lifelines Grid */}
+        {/* Powerups Grid */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold text-white">Your Lifelines</h3>
+            <h3 className="text-2xl font-bold text-white">⚡ Your Powerups</h3>
             <Button 
               onClick={() => router.push('/lifelines')}
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
             >
-              View All Lifelines
+              View All Powerups
             </Button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {user.lifelines.slice(0, 3).map((lifeline) => {
-              const IconComponent = lifelineIcons[lifeline.name] || Zap
+            {user.lifelines.slice(0, 3).map((powerup) => {
+              const IconComponent = powerupIcons[powerup.name] || Zap
               return (
-                <div key={lifeline.lifelineId} className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+                <div key={powerup.lifelineId} className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
                   <div className="flex items-center space-x-3 mb-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
                       <IconComponent className="w-5 h-5 text-white" />
                     </div>
-                    <h4 className="text-lg font-semibold text-white">{lifeline.name}</h4>
+                    <h4 className="text-lg font-semibold text-white">{powerup.name}</h4>
                   </div>
-                  <p className="text-white/70 mb-4">Remaining: {lifeline.remaining_uses} uses</p>
+                  <p className="text-white/70 mb-4">Remaining: {powerup.remaining_uses} uses</p>
                   <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
                     <div 
                       className="h-full bg-gradient-to-r from-green-400 to-blue-500"
-                      style={{ width: `${(lifeline.remaining_uses / 3) * 100}%` }}
+                      style={{ width: `${(powerup.remaining_uses / 3) * 100}%` }}
                     />
                   </div>
                 </div>

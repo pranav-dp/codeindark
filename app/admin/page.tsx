@@ -224,14 +224,36 @@ export default function AdminPage() {
         <IconComponent className="w-5 h-5" />
     }
     
+    // Check for powerup names in details
+    if (item.game === 'powerup' && (item as any).details?.powerupName) {
+      const powerupName = (item as any).details.powerupName
+      if (activityIcons[powerupName]) {
+        const IconComponent = activityIcons[powerupName]
+        return typeof IconComponent === 'string' ? 
+          <span className="text-lg">{IconComponent}</span> : 
+          <IconComponent className="w-5 h-5" />
+      }
+    }
+    
+    // Check for admin powerup names in details
+    if (item.game === 'admin_powerup' && (item as any).details?.powerupName) {
+      const powerupName = (item as any).details.powerupName
+      if (activityIcons[powerupName]) {
+        const IconComponent = activityIcons[powerupName]
+        return typeof IconComponent === 'string' ? 
+          <span className="text-lg">{IconComponent}</span> : 
+          <IconComponent className="w-5 h-5" />
+      }
+    }
+    
     // Fallback to game type
     if (item.game === 'slot_machine') {
       return <span className="text-lg">🎰</span>
     } else if (item.game === 'dice_roll') {
       return <Dice1 className="w-5 h-5" />
-    } else if (item.type === 'powerup' || item.type === 'lifeline') {
+    } else if (item.type === 'powerup' || item.type === 'lifeline' || item.game === 'powerup') {
       return <Zap className="w-5 h-5" />
-    } else if (item.type === 'admin_powerup') {
+    } else if (item.type === 'admin_powerup' || item.game === 'admin_powerup') {
       return <Target className="w-5 h-5" />
     }
     
@@ -239,8 +261,8 @@ export default function AdminPage() {
   }
 
   const getActivityColor = (item: ActivityItem) => {
-    if (item.type === 'lifeline' || item.type === 'powerup') return 'from-purple-500 to-pink-500'
-    if (item.type === 'admin_powerup') return 'from-red-500 to-orange-500'
+    if (item.type === 'lifeline' || item.type === 'powerup' || item.game === 'powerup') return 'from-purple-500 to-pink-500'
+    if (item.type === 'admin_powerup' || item.game === 'admin_powerup') return 'from-red-500 to-orange-500'
     if (item.outcome === 'win' || item.outcome === 'big_win') return 'from-green-500 to-emerald-500'
     if (item.outcome === 'lose') return 'from-red-500 to-rose-500'
     return 'from-blue-500 to-cyan-500'
@@ -542,6 +564,8 @@ export default function AdminPage() {
                             <span className="text-white/60 text-sm">
                               {item.type === 'lifeline' || item.type === 'powerup' ? item.name : 
                                item.type === 'admin_powerup' ? `Admin: ${item.name}` :
+                               item.game === 'powerup' ? (item as any).details?.powerupName || 'Powerup' :
+                               item.game === 'admin_powerup' ? `Admin: ${(item as any).details?.powerupName || 'Admin Action'}` :
                                item.game === 'dice_roll' ? 'Dice Roll' : 'Slot Machine'}
                             </span>
                           </div>
@@ -550,7 +574,8 @@ export default function AdminPage() {
                       </div>
 
                       <div className="text-right">
-                        {item.type === 'lifeline' || item.type === 'powerup' || item.type === 'admin_powerup' ? (
+                        {item.type === 'lifeline' || item.type === 'powerup' || item.type === 'admin_powerup' || 
+                         item.game === 'powerup' || item.game === 'admin_powerup' ? (
                           <p className="text-red-400 font-semibold">-{item.points_spent} pts</p>
                         ) : (
                           <div>
