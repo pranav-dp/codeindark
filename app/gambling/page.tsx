@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { ArrowLeft, Coins, Zap, Skull } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ScratchCard } from 'next-scratchcard'
@@ -180,7 +181,7 @@ export default function GamblingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-white">Loading...</div>
       </div>
     )
@@ -189,16 +190,15 @@ export default function GamblingPage() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 p-6">
+    <div className="min-h-screen bg-black p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <Button
               onClick={() => router.push('/dashboard')}
-              variant="outline"
+              variant="glass"
               size="sm"
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -253,7 +253,9 @@ export default function GamblingPage() {
             <Button
               onClick={playSlots}
               disabled={slotSpinning || userPoints < 10}
-              className="w-full h-12 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold text-lg"
+              variant="gradient-yellow"
+              size="lg"
+              className="w-full h-12 font-bold text-lg"
             >
               {slotSpinning ? 'Spinning...' : 'Spin (10 pts)'}
             </Button>
@@ -287,7 +289,7 @@ export default function GamblingPage() {
                     <ScratchCard
                       width={256}
                       height={256}
-                      finishPercent={70}
+                      finishPercent={55}
                       brushSize={60}
                       onComplete={handleScratchComplete}
                     >
@@ -332,56 +334,48 @@ export default function GamblingPage() {
         </div>
 
         {/* Powerup Selection Modal */}
-        <AnimatePresence>
-          {showPowerupModal && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 p-8 max-w-md w-full"
-              >
-                <h3 className="text-2xl font-bold text-white mb-4 text-center">🎉 Choose Your Powerup!</h3>
-                
-                <div className="mb-6">
-                  <Select value={selectedPowerup} onValueChange={setSelectedPowerup}>
-                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                      <SelectValue placeholder="Select a powerup..." />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-900 border-white/20">
-                      {availablePowerups.map((powerup) => (
-                        <SelectItem key={powerup._id} value={powerup._id} className="text-white hover:bg-white/10">
-                          {powerup.name} - {powerup.description}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+        <Dialog open={showPowerupModal} onOpenChange={setShowPowerupModal}>
+          <DialogContent className="bg-white/10 backdrop-blur-xl border-white/20 max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold text-white text-center">
+                🎉 Choose Your Powerup!
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="py-4">
+              <Select value={selectedPowerup} onValueChange={setSelectedPowerup}>
+                <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                  <SelectValue placeholder="Select a powerup..." />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-900 border-white/20">
+                  {availablePowerups.map((powerup) => (
+                    <SelectItem key={powerup._id} value={powerup._id} className="text-white hover:bg-white/10">
+                      {powerup.name} - {powerup.description}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-                <div className="flex space-x-3">
-                  <Button
-                    onClick={() => setShowPowerupModal(false)}
-                    className="flex-1 bg-gray-600 hover:bg-gray-700 text-white"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={claimPowerup}
-                    disabled={!selectedPowerup}
-                    className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                  >
-                    Claim Powerup
-                  </Button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+            <DialogFooter className="flex space-x-3">
+              <Button
+                onClick={() => setShowPowerupModal(false)}
+                variant="secondary"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={claimPowerup}
+                disabled={!selectedPowerup}
+                variant="gradient"
+                className="flex-1"
+              >
+                Claim Powerup
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

@@ -102,7 +102,7 @@ export default function LifelinesPage() {
 
   if (loading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-white">Loading...</div>
       </div>
     )
@@ -111,16 +111,15 @@ export default function LifelinesPage() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 p-6">
+    <div className="min-h-screen bg-black p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <Button
               onClick={() => router.push('/dashboard')}
-              variant="outline"
+              variant="glass"
               size="sm"
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -183,10 +182,9 @@ export default function LifelinesPage() {
                 <Button
                   onClick={() => usePowerup(powerup.id)}
                   disabled={!powerup.canUse || isUsing}
+                  variant={powerup.canUse ? "gradient" : "secondary"}
                   className={`w-full h-11 rounded-xl font-medium transition-all duration-200 ${
-                    powerup.canUse
-                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
-                      : 'bg-white/10 text-white/50 cursor-not-allowed'
+                    !powerup.canUse ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
                   {isUsing ? 'Activating...' : powerup.canUse ? 'Activate Powerup' : 

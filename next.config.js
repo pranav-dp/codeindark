@@ -9,6 +9,14 @@ const nextConfig = {
     formats: ['image/webp', 'image/avif'],
   },
   
+  // Exclude landingpage folder from build
+  webpack: (config) => {
+    config.resolve.alias = {
+      ...config.resolve.alias,
+    }
+    return config
+  },
+  
   // Security headers
   async headers() {
     return [

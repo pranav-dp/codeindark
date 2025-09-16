@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ArrowLeft, TrendingUp, TrendingDown, Zap, Dice1, Users, Eye, HelpCircle, RotateCcw } from 'lucide-react'
 import { motion } from 'framer-motion'
 
@@ -107,7 +109,7 @@ export default function HistoryPage() {
 
   if (loading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
+      <div className="min-h-screen flex items-center justify-center bg-black">
         <div className="text-white">Loading...</div>
       </div>
     )
@@ -116,16 +118,15 @@ export default function HistoryPage() {
   if (!user) return null
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 p-6">
+    <div className="min-h-screen bg-black p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <Button
               onClick={() => router.push('/dashboard')}
-              variant="outline"
+              variant="glass"
               size="sm"
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back
@@ -139,19 +140,18 @@ export default function HistoryPage() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <motion.div 
-            className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6"
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <Zap className="w-6 h-6 text-white" />
+          <motion.div whileHover={{ scale: 1.02 }}>
+            <Card variant="glass-rounded" className="p-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-white/60 text-sm">Lifelines Used</p>
+                  <p className="text-2xl font-bold text-white">{stats.totalLifelinesUsed}</p>
+                </div>
               </div>
-              <div>
-                <p className="text-white/60 text-sm">Lifelines Used</p>
-                <p className="text-2xl font-bold text-white">{stats.totalLifelinesUsed}</p>
-              </div>
-            </div>
+            </Card>
           </motion.div>
 
           <motion.div 

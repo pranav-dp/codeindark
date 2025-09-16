@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Zap, Search, Clock, Tag, RotateCcw, Eye } from 'lucide-react'
 
 const powerupIcons: { [key: string]: any } = {
@@ -72,42 +73,40 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900 p-6">
+    <div className="min-h-screen bg-gray-900 p-6">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">Welcome back, {user.username}!</h1>
-            <p className="text-white/70">Ready to play and earn points?</p>
+            <h1 className="text-3xl font-bold text-white text-glow-purple">Welcome back, {user.username}!</h1>
+            <p className="text-gray-400">Ready to play and earn points?</p>
           </div>
           <div className="flex space-x-3">
             {user.isAdmin && (
               <Button 
                 onClick={() => router.push('/admin')}
-                variant="outline"
-                className="bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30"
+                variant="destructive"
+                className="shadow-lg shadow-red-500/25"
               >
                 Admin
               </Button>
             )}
             <Button 
               onClick={() => router.push('/leaderboard')}
-              variant="outline"
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              variant="dark"
             >
               Leaderboard
             </Button>
             <Button 
               onClick={() => router.push('/history')}
-              variant="outline"
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              variant="dark"
             >
               History
             </Button>
             <Button 
               onClick={handleLogout}
               variant="outline"
-              className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+              className="border-gray-600 text-gray-300 hover:bg-gray-800"
             >
               Logout
             </Button>
@@ -115,13 +114,11 @@ export default function Dashboard() {
         </div>
 
         {/* Points Display */}
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 p-6 mb-8">
-          <div className="text-center">
-            <h2 className="text-xl text-white/80 mb-2">Your Points</h2>
-            <div className="text-5xl font-bold text-white mb-2">{user.points}</div>
-            <p className="text-white/60">Use points for powerups or try your luck gambling!</p>
-          </div>
-        </div>
+        <Card variant="stats-glow" className="p-8 mb-8 text-center">
+          <h2 className="text-xl text-gray-300 mb-4">Your Points</h2>
+          <div className="text-6xl font-bold text-white text-glow-purple mb-4">{user.points}</div>
+          <p className="text-gray-400">Use points for powerups or try your luck gambling!</p>
+        </Card>
 
         {/* Powerups Grid */}
         <div className="mb-8">
@@ -129,31 +126,31 @@ export default function Dashboard() {
             <h3 className="text-2xl font-bold text-white">⚡ Your Powerups</h3>
             <Button 
               onClick={() => router.push('/lifelines')}
-              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+              variant="purple-glow"
             >
-              View All Powerups
+              Activate Powerups
             </Button>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {user.lifelines.slice(0, 3).map((powerup) => {
+            {user.lifelines.slice(0, 9).map((powerup) => {
               const IconComponent = powerupIcons[powerup.name] || Zap
               return (
-                <div key={powerup.lifelineId} className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+                <Card key={powerup.lifelineId} variant="dark-glow" className="p-6 hover:border-purple-400/40 transition-all">
                   <div className="flex items-center space-x-3 mb-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                    <div className="w-10 h-10 bg-purple-600 rounded-xl flex items-center justify-center glow-purple">
                       <IconComponent className="w-5 h-5 text-white" />
                     </div>
                     <h4 className="text-lg font-semibold text-white">{powerup.name}</h4>
                   </div>
-                  <p className="text-white/70 mb-4">Remaining: {powerup.remaining_uses} uses</p>
-                  <div className="w-full h-2 bg-white/20 rounded-full overflow-hidden">
+                  <p className="text-gray-400 mb-4">Remaining: {powerup.remaining_uses} uses</p>
+                  <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
                     <div 
-                      className="h-full bg-gradient-to-r from-green-400 to-blue-500"
+                      className="h-full bg-gradient-to-r from-purple-500 to-purple-400 transition-all duration-300"
                       style={{ width: `${(powerup.remaining_uses / 3) * 100}%` }}
                     />
                   </div>
-                </div>
+                </Card>
               )
             })}
           </div>
@@ -161,27 +158,29 @@ export default function Dashboard() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div 
+          <Card 
+            variant="interactive-glow"
+            className="p-6 text-center"
             onClick={() => router.push('/gambling')}
-            className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 text-center cursor-pointer hover:bg-white/15 transition-all duration-300"
           >
             <h3 className="text-xl font-bold text-white mb-4">🎰 Slot Machine</h3>
-            <p className="text-white/70 mb-4">Try your luck! 10 points per spin</p>
-            <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white">
+            <p className="text-gray-400 mb-4">Try your luck! 10 points per spin</p>
+            <Button variant="purple-glow">
               Play Now
             </Button>
-          </div>
+          </Card>
           
-          <div 
+          <Card 
+            variant="interactive-glow"
+            className="p-6 text-center"
             onClick={() => router.push('/gambling')}
-            className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6 text-center cursor-pointer hover:bg-white/15 transition-all duration-300"
           >
-            <h3 className="text-xl font-bold text-white mb-4">🎲 Dice Roll</h3>
-            <p className="text-white/70 mb-4">Bet your points for big wins!</p>
-            <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white">
-              Roll Dice
+            <h3 className="text-xl font-bold text-white mb-4">⚡ Scratch Strike</h3>
+            <p className="text-gray-400 mb-4">Scratch cards for powerups! 20 points per card</p>
+            <Button variant="gradient">
+              Scratch Now
             </Button>
-          </div>
+          </Card>
         </div>
       </div>
     </div>

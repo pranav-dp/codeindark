@@ -26,24 +26,24 @@ export default function Home() {
     )
   }
 
-  if (user) {
-    return null // Will redirect to dashboard
-  }
-
   return (
     <div className="min-h-screen relative flex flex-col items-center justify-center p-4 overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage:
-            "url('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Fractal%20Glass%20-%204.jpg-m0AGFq8cSUKl8bpkwATMUJsUJokLwH.jpeg')",
+            "url('https://persistent.oaistatic.com/burrito-nux/1920.webp')",
+            
         }}
       />
 
       {/* Subtle overlay for better contrast */}
       <div className="absolute inset-0 bg-black/20" />
 
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex flex-col items-center justify-center space-y-8 relative z-10">
+        <h1 className="text-4xl md:text-5xl font-bold text-white text-center">
+          Welcome to Code in the Dark!
+        </h1>
         <AuthenticationCard />
       </div>
 
