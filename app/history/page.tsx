@@ -56,8 +56,11 @@ export default function HistoryPage() {
   const [stats, setStats] = useState<Stats>({
     totalLifelinesUsed: 0,
     totalGamblingGames: 0,
+    totalSabotagesSent: 0,
+    totalSabotagesReceived: 0,
     totalPointsSpent: 0,
-    totalPointsWon: 0
+    totalPointsWon: 0,
+    totalPointsLost: 0
   })
   const [filter, setFilter] = useState<'all' | 'lifelines' | 'gambling' | 'sabotage'>('all')
   const [isLoading, setIsLoading] = useState(true)

@@ -11,7 +11,7 @@ import { motion } from 'framer-motion'
 
 interface ActivityItem {
   id: string
-  type?: 'lifeline' | 'gambling' | 'powerup' | 'admin_powerup'
+  type?: 'lifeline' | 'gambling' | 'powerup' | 'admin_powerup' | 'sabotage'
   game?: string
   username: string
   timestamp: string
