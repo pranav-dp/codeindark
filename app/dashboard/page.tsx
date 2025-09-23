@@ -6,7 +6,6 @@ import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Zap, Search, Clock, Tag, RotateCcw, Eye } from 'lucide-react'
-import SabotageNotificationComponent from '@/components/sabotage-notification'
 
 const powerupIcons: { [key: string]: any } = {
   'Search Sprint': Search,
@@ -75,7 +74,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-900 p-6">
-      <SabotageNotificationComponent userId={user.id} />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">

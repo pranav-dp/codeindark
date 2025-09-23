@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { ToastProvider } from '@/components/ui/toast'
+import SabotageNotificationWrapper from '@/components/sabotage-notification-wrapper'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -35,6 +36,7 @@ html {
         <ErrorBoundary>
           <ToastProvider>
             <AuthProvider>
+              <SabotageNotificationWrapper />
               {children}
             </AuthProvider>
           </ToastProvider>
