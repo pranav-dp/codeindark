@@ -6,12 +6,12 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ArrowLeft, TrendingUp, TrendingDown, Zap, Dice1, Users, Eye, HelpCircle, RotateCcw } from 'lucide-react'
+import { ArrowLeft, TrendingUp, TrendingDown, Zap, Dice1, Users, Eye, HelpCircle, RotateCcw, Target, Shield } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 interface HistoryItem {
   id: string
-  type: 'lifeline' | 'gambling'
+  type: 'lifeline' | 'gambling' | 'sabotage_sent' | 'sabotage_received'
   timestamp: string
   // Lifeline fields
   lifelineId?: string
@@ -23,13 +23,22 @@ interface HistoryItem {
   points_won?: number
   outcome?: string
   dice_result?: number
+  // Sabotage fields
+  targetUsername?: string
+  attackerUsername?: string
+  sabotage?: string
+  pointsSpent?: number
+  pointsLost?: number
 }
 
 interface Stats {
   totalLifelinesUsed: number
   totalGamblingGames: number
+  totalSabotagesSent: number
+  totalSabotagesReceived: number
   totalPointsSpent: number
   totalPointsWon: number
+  totalPointsLost: number
 }
 
 const lifelineIcons: { [key: string]: any } = {
@@ -50,7 +59,7 @@ export default function HistoryPage() {
     totalPointsSpent: 0,
     totalPointsWon: 0
   })
-  const [filter, setFilter] = useState<'all' | 'lifelines' | 'gambling'>('all')
+  const [filter, setFilter] = useState<'all' | 'lifelines' | 'gambling' | 'sabotage'>('all')
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -94,6 +103,8 @@ export default function HistoryPage() {
     if (item.type === 'lifeline') {
       const IconComponent = lifelineIcons[item.name || ''] || Zap
       return <IconComponent className="w-5 h-5" />
+    } else if (item.type === 'sabotage_sent' || item.type === 'sabotage_received') {
+      return <Target className="w-5 h-5" />
     } else {
       return item.game === 'scratch_strike' ? <span className="text-lg">⚡</span> :
              item.game === 'dice_roll' ? <Dice1 className="w-5 h-5" /> : <span className="text-lg">🎰</span>
@@ -102,6 +113,8 @@ export default function HistoryPage() {
 
   const getItemColor = (item: HistoryItem) => {
     if (item.type === 'lifeline') return 'from-purple-500 to-pink-500'
+    if (item.type === 'sabotage_sent') return 'from-red-500 to-orange-500'
+    if (item.type === 'sabotage_received') return 'from-red-600 to-red-800'
     if (item.outcome === 'win' || item.outcome === 'big_win') return 'from-green-500 to-emerald-500'
     if (item.outcome === 'lose') return 'from-red-500 to-rose-500'
     return 'from-blue-500 to-cyan-500'
@@ -139,7 +152,7 @@ export default function HistoryPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <motion.div whileHover={{ scale: 1.02 }}>
             <Card variant="glass-rounded" className="p-6">
               <div className="flex items-center space-x-3">
@@ -174,12 +187,13 @@ export default function HistoryPage() {
             whileHover={{ scale: 1.02 }}
           >
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl flex items-center justify-center">
-                <TrendingDown className="w-6 h-6 text-white" />
+              <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-orange-500 rounded-xl flex items-center justify-center">
+                <Target className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-white/60 text-sm">Points Spent</p>
-                <p className="text-2xl font-bold text-white">{stats.totalPointsSpent}</p>
+                <p className="text-white/60 text-sm">Sabotages</p>
+                <p className="text-2xl font-bold text-white">{stats.totalSabotagesSent}/{stats.totalSabotagesReceived}</p>
+                <p className="text-white/40 text-xs">Sent/Received</p>
               </div>
             </div>
           </motion.div>
@@ -193,8 +207,8 @@ export default function HistoryPage() {
                 <TrendingUp className="w-6 h-6 text-white" />
               </div>
               <div>
-                <p className="text-white/60 text-sm">Points Won</p>
-                <p className="text-2xl font-bold text-white">{stats.totalPointsWon}</p>
+                <p className="text-white/60 text-sm">Net Points</p>
+                <p className="text-2xl font-bold text-white">{stats.totalPointsWon - stats.totalPointsSpent - stats.totalPointsLost}</p>
               </div>
             </div>
           </motion.div>
@@ -202,7 +216,7 @@ export default function HistoryPage() {
 
         {/* Filter Buttons */}
         <div className="flex space-x-4 mb-6">
-          {(['all', 'lifelines', 'gambling'] as const).map((filterType) => (
+          {(['all', 'lifelines', 'gambling', 'sabotage'] as const).map((filterType) => (
             <Button
               key={filterType}
               onClick={() => setFilter(filterType)}
@@ -244,16 +258,25 @@ export default function HistoryPage() {
                       <div>
                         <h4 className="text-white font-semibold">
                           {item.type === 'lifeline' ? item.name : 
+                           item.type === 'sabotage_sent' ? `Sabotaged ${item.targetUsername}` :
+                           item.type === 'sabotage_received' ? `Sabotaged by ${item.attackerUsername}` :
                            item.game === 'scratch_strike' ? 'Scratch Strike' :
                            item.game === 'dice_roll' ? 'Dice Roll' : 'Slot Machine'}
                         </h4>
                         <p className="text-white/60 text-sm">{formatDate(item.timestamp)}</p>
+                        {(item.type === 'sabotage_sent' || item.type === 'sabotage_received') && (
+                          <p className="text-red-400 text-xs">with {item.sabotage}</p>
+                        )}
                       </div>
                     </div>
 
                     <div className="text-right">
                       {item.type === 'lifeline' ? (
                         <p className="text-red-400 font-semibold">-{item.points_spent} pts</p>
+                      ) : item.type === 'sabotage_sent' ? (
+                        <p className="text-red-400 font-semibold">-{item.pointsSpent} pts</p>
+                      ) : item.type === 'sabotage_received' ? (
+                        <p className="text-red-400 font-semibold">-{item.pointsLost} pts</p>
                       ) : (
                         <div>
                           <p className="text-red-400 text-sm">-{item.points_spent || item.points_bet} pts</p>

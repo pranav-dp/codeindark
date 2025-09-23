@@ -217,7 +217,12 @@ export default function AdminPage() {
   }
 
   const getActivityIcon = (item: ActivityItem) => {
-    // Check for specific powerup/lifeline names first
+    // Check for sabotage activities first
+    if (item.game === 'sabotage' || item.type === 'sabotage') {
+      return <Target className="w-5 h-5" />
+    }
+    
+    // Check for specific powerup/lifeline names
     if (item.name && activityIcons[item.name]) {
       const IconComponent = activityIcons[item.name]
       return typeof IconComponent === 'string' ? 
@@ -264,6 +269,7 @@ export default function AdminPage() {
   }
 
   const getActivityColor = (item: ActivityItem) => {
+    if (item.game === 'sabotage' || item.type === 'sabotage') return 'from-red-500 to-red-600'
     if (item.type === 'lifeline' || item.type === 'powerup' || item.game === 'powerup') return 'from-purple-500 to-pink-500'
     if (item.type === 'admin_powerup' || item.game === 'admin_powerup') return 'from-red-500 to-orange-500'
     if (item.game === 'scratch_strike') return 'from-purple-500 to-pink-500'
@@ -546,7 +552,7 @@ export default function AdminPage() {
                 </p>
               </div>
             ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-3 min-h-[calc(100vh-300px)] overflow-y-auto">
                 {activity.map((item, index) => (
                   <motion.div
                     key={item.id}
@@ -566,7 +572,9 @@ export default function AdminPage() {
                             <h4 className="text-white font-semibold">{item.username}</h4>
                             <span className="text-white/40">•</span>
                             <span className="text-white/60 text-sm">
-                              {item.type === 'lifeline' || item.type === 'powerup' ? item.name : 
+                              {item.game === 'sabotage' ? 
+                                `Sabotaged ${(item as any).targetUsername || 'Unknown'} with ${(item as any).sabotage || 'Unknown'}` :
+                               item.type === 'lifeline' || item.type === 'powerup' ? item.name : 
                                item.type === 'admin_powerup' ? `Admin: ${item.name}` :
                                item.game === 'powerup' ? (item as any).details?.powerupName || 'Powerup' :
                                item.game === 'admin_powerup' ? `Admin: ${(item as any).details?.powerupName || 'Admin Action'}` :
@@ -579,7 +587,14 @@ export default function AdminPage() {
                       </div>
 
                       <div className="text-right">
-                        {item.type === 'lifeline' || item.type === 'powerup' || item.type === 'admin_powerup' || 
+                        {item.game === 'sabotage' ? (
+                          <div>
+                            <p className="text-red-400 font-semibold">-{item.points_spent} pts (attacker)</p>
+                            {(item as any).pointsDeducted > 0 && (
+                              <p className="text-orange-400 text-sm">-{(item as any).pointsDeducted} pts (target)</p>
+                            )}
+                          </div>
+                        ) : item.type === 'lifeline' || item.type === 'powerup' || item.type === 'admin_powerup' || 
                          item.game === 'powerup' || item.game === 'admin_powerup' || item.game === 'scratch_strike' ? (
                           <p className="text-red-400 font-semibold">-{item.points_spent} pts</p>
                         ) : (

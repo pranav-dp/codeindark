@@ -86,17 +86,43 @@ export async function GET(request: NextRequest) {
         }
       })
     } else {
-      // Get real-time activity from gamblelog (most recent across all users)
-      const totalCount = await db.collection('gamblelog').countDocuments()
+      // Get real-time activity from gamblelog (excluding sabotage) and sabotages collection
+      const totalGamelogCount = await db.collection('gamblelog').countDocuments({ game: { $ne: 'sabotage' } })
+      const sabotageCount = await db.collection('sabotages').countDocuments()
       
       const recentActivity = await db.collection('gamblelog')
+        .find({ game: { $ne: 'sabotage' } }) // Exclude sabotage from gamblelog to prevent duplicates
+        .sort({ timestamp: -1 })
+        .skip(skip)
+        .limit(Math.floor(limit / 2))
+        .toArray()
+
+      const recentSabotages = await db.collection('sabotages')
         .find({})
         .sort({ timestamp: -1 })
         .skip(skip)
-        .limit(limit)
+        .limit(Math.floor(limit / 2))
         .toArray()
 
-      // Get user details for each activity
+      // Combine and sort all activities
+      const combinedActivity = [
+        ...recentActivity,
+        ...recentSabotages.map(s => ({ 
+          _id: s._id,
+          userId: s.attackerId,
+          username: s.attackerUsername,
+          game: 'sabotage',
+          points_spent: s.pointsSpent,
+          outcome: 'sabotaged',
+          targetUsername: s.targetUsername,
+          sabotage: s.sabotage,
+          pointsDeducted: s.pointsDeducted,
+          timestamp: s.timestamp
+        }))
+      ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, limit)
+
+      // Get user details for non-sabotage activities (sabotages already have usernames)
       const userIds = [...new Set(recentActivity.map(activity => activity.userId))]
       const users = await db.collection('users')
         .find({ _id: { $in: userIds } })
@@ -108,9 +134,9 @@ export async function GET(request: NextRequest) {
         return map
       }, {} as Record<string, string>)
 
-      const activityWithUsers = recentActivity.map(activity => ({
+      const activityWithUsers = combinedActivity.map(activity => ({
         ...activity,
-        username: userMap[activity.userId] || 'Unknown',
+        username: activity.username || userMap[activity.userId] || 'Unknown',
         id: activity._id
       }))
 
@@ -119,10 +145,10 @@ export async function GET(request: NextRequest) {
         pagination: {
           page,
           limit,
-          total: totalCount,
-          totalPages: Math.ceil(totalCount / limit)
+          total: totalGamelogCount + sabotageCount,
+          totalPages: Math.ceil((totalGamelogCount + sabotageCount) / limit)
         },
-        totalActivities: totalCount
+        totalActivities: totalGamelogCount + sabotageCount
       })
     }
 

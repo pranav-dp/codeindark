@@ -6,6 +6,7 @@ import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Zap, Search, Clock, Tag, RotateCcw, Eye } from 'lucide-react'
+import SabotageNotificationComponent from '@/components/sabotage-notification'
 
 const powerupIcons: { [key: string]: any } = {
   'Search Sprint': Search,
@@ -74,6 +75,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-900 p-6">
+      <SabotageNotificationComponent userId={user.id} />
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -92,6 +94,13 @@ export default function Dashboard() {
               </Button>
             )}
             <Button 
+              onClick={() => router.push('/sabotage')}
+              variant="destructive"
+              className="bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30"
+            >
+              Sabotage
+            </Button>
+            <Button 
               onClick={() => router.push('/leaderboard')}
               variant="dark"
             >
@@ -105,8 +114,8 @@ export default function Dashboard() {
             </Button>
             <Button 
               onClick={handleLogout}
-              variant="outline"
-              className="border-gray-600 text-gray-300 hover:bg-gray-800"
+              variant="destructive"
+              className="bg-red-500/20 border-red-500/30 text-red-400 hover:bg-red-500/30"
             >
               Logout
             </Button>
@@ -133,7 +142,9 @@ export default function Dashboard() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {user.lifelines.slice(0, 9).map((powerup) => {
+            {user.lifelines.filter(powerup => 
+              ['Search Sprint', 'Time Warp (30s)', 'Time Warp (60s)', 'Time Warp (90s)', 'Tag Whisper', 'Reincarnation', 'Screen Flash'].includes(powerup.name)
+            ).map((powerup) => {
               const IconComponent = powerupIcons[powerup.name] || Zap
               return (
                 <Card key={powerup.lifelineId} variant="dark-glow" className="p-6 hover:border-purple-400/40 transition-all">

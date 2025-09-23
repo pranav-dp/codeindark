@@ -46,6 +46,20 @@ export async function GET(request: NextRequest) {
       history.push(...gamblingHistory)
     }
 
+    if (type === 'sabotage' || type === 'all') {
+      const sabotageSent = (user.history?.sabotage_sent || []).map((item: any) => ({
+        ...item,
+        type: 'sabotage_sent',
+        id: `sabotage_sent_${item.timestamp}`
+      }))
+      const sabotageReceived = (user.history?.sabotage_received || []).map((item: any) => ({
+        ...item,
+        type: 'sabotage_received',
+        id: `sabotage_received_${item.timestamp}`
+      }))
+      history.push(...sabotageSent, ...sabotageReceived)
+    }
+
     // Sort by timestamp (newest first) and limit
     history.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
     history = history.slice(0, limit)
@@ -54,11 +68,15 @@ export async function GET(request: NextRequest) {
     const stats = {
       totalLifelinesUsed: user.history?.lifeline_usage?.length || 0,
       totalGamblingGames: user.history?.gambling?.length || 0,
+      totalSabotagesSent: user.history?.sabotage_sent?.length || 0,
+      totalSabotagesReceived: user.history?.sabotage_received?.length || 0,
       totalPointsSpent: [
         ...(user.history?.lifeline_usage || []),
-        ...(user.history?.gambling || [])
-      ].reduce((sum, item) => sum + (item.points_spent || item.points_bet || 0), 0),
-      totalPointsWon: (user.history?.gambling || []).reduce((sum: number, item: any) => sum + (item.points_won || 0), 0)
+        ...(user.history?.gambling || []),
+        ...(user.history?.sabotage_sent || [])
+      ].reduce((sum, item) => sum + (item.points_spent || item.pointsSpent || item.points_bet || 0), 0),
+      totalPointsWon: (user.history?.gambling || []).reduce((sum: number, item: any) => sum + (item.points_won || 0), 0),
+      totalPointsLost: (user.history?.sabotage_received || []).reduce((sum: number, item: any) => sum + (item.pointsLost || 0), 0)
     }
 
     return NextResponse.json({
