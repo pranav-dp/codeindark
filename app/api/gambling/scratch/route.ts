@@ -42,16 +42,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient points' }, { status: 400 })
     }
 
-    // Generate 3x3 grid (60% penalty, 40% powerup chance)
-    const grid = Array(9).fill(null).map(() => Math.random() < 0.4 ? 'powerup' : 'penalty')
+    // Generate 3x3 grid (30% powerup chance, 70% penalty chance)
+    const grid = Array(9).fill(null).map(() => Math.random() < 0.3 ? 'powerup' : 'penalty')
     const result = grid[position]
     
     let powerups: any[] = []
     if (result === 'powerup') {
-      // Get available FOR powerups
+      // Get available FOR powerups excluding reincarnation
       powerups = await db.collection('lifelines').find({ 
         type: 'FOR', 
-        isActive: true 
+        isActive: true,
+        name: { $ne: 'Reincarnation' } // Exclude reincarnation by name instead
       }).toArray()
     }
 

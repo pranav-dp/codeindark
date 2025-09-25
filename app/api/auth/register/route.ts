@@ -26,13 +26,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'User already exists' }, { status: 400 })
     }
 
-    // Get all lifelines to assign to new user
+    // Get all lifelines to assign to new user with correct use counts
     const lifelines = await db.collection('lifelines').find().toArray()
-    const userLifelines = lifelines.map(l => ({
-      lifelineId: l._id,
-      name: l.name,
-      remaining_uses: l.max_uses
-    }))
+    const userLifelines = lifelines.map(l => {
+      let remainingUses = l.max_uses
+      
+      // Override specific powerup use counts
+      if (l._id.toString() === 'powerup_search_sprint') remainingUses = 3
+      else if (l._id.toString() === 'powerup_time_warp_90') remainingUses = 2
+      else if (l._id.toString() === 'powerup_reincarnation') remainingUses = 1
+      else if (l._id.toString() === 'powerup_screen_flash') remainingUses = 3
+      else if (l._id.toString() === 'powerup_tag_whisper') remainingUses = 3
+      else if (l._id.toString() === 'powerup_time_warp_30') remainingUses = 3
+      else if (l._id.toString() === 'powerup_time_warp_60') remainingUses = 3
+      
+      return {
+        lifelineId: l._id,
+        name: l.name,
+        remaining_uses: remainingUses
+      }
+    })
 
     // Create new user
     const hashedPassword = await hashPassword(password)

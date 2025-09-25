@@ -8,9 +8,12 @@ export async function GET(request: NextRequest) {
 
     const db = await getDb()
     
-    // Get top users by points
+    // Get top users by points (exclude admins)
     const topUsers = await db.collection('users')
-      .find({ isActive: true })
+      .find({ 
+        isActive: true,
+        isAdmin: { $ne: true }
+      })
       .sort({ points: -1 })
       .limit(limit)
       .project({
@@ -45,7 +48,10 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       leaderboard,
-      totalUsers: await db.collection('users').countDocuments({ isActive: true })
+      totalUsers: await db.collection('users').countDocuments({ 
+        isActive: true,
+        isAdmin: { $ne: true }
+      })
     })
 
   } catch (error) {

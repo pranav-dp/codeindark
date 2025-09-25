@@ -22,9 +22,10 @@ export async function GET(request: NextRequest) {
       isActive: true 
     }).toArray()
 
-    // Get all active users except current user
+    // Get all active users except current user and admins
     const users = await db.collection('users').find({ 
       isActive: true,
+      isAdmin: { $ne: true },
       _id: { $ne: payload.userId as any }
     }).project({ 
       _id: 1, 

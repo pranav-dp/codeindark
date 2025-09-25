@@ -49,16 +49,9 @@ export default function Home() {
 
       <footer className="relative z-10 mb-6">
         <div className="backdrop-blur-md bg-white/10 border border-white/20 rounded-2xl px-6 py-3">
-          <p className="text-sm text-white/80 text-center">
-            Designed and Developed with <span className="text-white/90">❤️</span> by{" "}
-            <a
-              href="github.com/pranav-dp"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white/90 hover:text-white transition-colors duration-200 font-medium"
-            >
-              Pranav D
-            </a>
+          <p className="text-sm text-red/80 text-center">
+            Designed and Developed by Code in The Dark Team!
+            
           </p>
         </div>
       </footer>

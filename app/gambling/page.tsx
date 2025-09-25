@@ -259,6 +259,12 @@ export default function GamblingPage() {
             >
               {slotSpinning ? 'Spinning...' : 'Spin (10 pts)'}
             </Button>
+
+            <div className="text-center mt-4">
+              <p className="text-white/60 text-sm italic">
+                90% of gamblers quit before they win something big
+              </p>
+            </div>
           </div>
 
           {/* Scratch Strike */}
@@ -266,6 +272,7 @@ export default function GamblingPage() {
             <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-white mb-2">⚡ Scratch Strike</h2>
               <p className="text-white/70">20 points per scratch</p>
+              <p className="text-white/60 text-sm italic mt-1">Click a card and scratch it to gamble powerups!</p>
             </div>
 
             <div className="bg-black/30 rounded-2xl p-6 mb-6">

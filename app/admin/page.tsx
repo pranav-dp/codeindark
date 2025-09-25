@@ -78,7 +78,9 @@ export default function AdminPage() {
   
   // Powerup control states
   const [againstPowerups, setAgainstPowerups] = useState<Powerup[]>([])
+  const [forPowerups, setForPowerups] = useState<Powerup[]>([])
   const [selectedPowerup, setSelectedPowerup] = useState<string>('')
+  const [selectedForPowerup, setSelectedForPowerup] = useState<string>('')
   const [targetUserId, setTargetUserId] = useState<string>('')
   const [pointAmount, setPointAmount] = useState<number>(0)
   const [pointAction, setPointAction] = useState<'add' | 'subtract'>('add')
@@ -108,6 +110,18 @@ export default function AdminPage() {
       if (response.ok) {
         const data = await response.json()
         setAgainstPowerups(data.powerups)
+        
+        // Also fetch FOR powerups
+        const forResponse = await fetch('/api/lifelines', { credentials: 'include' })
+        if (forResponse.ok) {
+          const forData = await forResponse.json()
+          setForPowerups(forData.powerups.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            cost: p.cost
+          })))
+        }
       }
     } catch (error) {
       console.error('Failed to fetch powerups:', error)
@@ -170,6 +184,36 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Failed to trigger powerup:', error)
       alert('Failed to trigger powerup')
+    }
+  }
+
+  const giveForPowerup = async () => {
+    if (!selectedForPowerup || !targetUserId) return
+    
+    try {
+      const response = await fetch('/api/admin/give-powerup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          userId: targetUserId,
+          powerupId: selectedForPowerup
+        })
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        alert(data.message)
+        fetchUsers() // Refresh user data
+        fetchActivity() // Refresh activity
+        setSelectedForPowerup('')
+      } else {
+        const error = await response.json()
+        alert(`Error: ${error.error}`)
+      }
+    } catch (error) {
+      console.error('Failed to give FOR powerup:', error)
+      alert('Failed to give powerup')
     }
   }
 
@@ -378,7 +422,7 @@ export default function AdminPage() {
 
         {/* Controls Panel */}
         {view === 'controls' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             {/* AGAINST Powerups */}
             <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
               <h3 className="text-xl font-bold text-white mb-4">⚡ AGAINST Powerups</h3>
@@ -430,6 +474,53 @@ export default function AdminPage() {
                   className="w-full bg-red-500/20 hover:bg-red-500/30 text-red-400 border-red-500/30"
                 >
                   Trigger Powerup
+                </Button>
+              </div>
+            </div>
+
+            {/* FOR Powerups */}
+            <div className="bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 p-6">
+              <h3 className="text-xl font-bold text-white mb-4">🎁 Give FOR Powerups</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-white/80 text-sm mb-2 block">Target User:</label>
+                  <Select value={targetUserId} onValueChange={setTargetUserId}>
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Select user..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-white/20">
+                      {users.filter(u => !u.isAdmin).map((u) => (
+                        <SelectItem key={u.id} value={u.id} className="text-white hover:bg-white/10">
+                          {u.username} ({u.points} pts)
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-white/80 text-sm mb-2 block">FOR Powerup:</label>
+                  <Select value={selectedForPowerup} onValueChange={setSelectedForPowerup}>
+                    <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                      <SelectValue placeholder="Select powerup..." />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-900 border-white/20">
+                      {forPowerups.map((p) => (
+                        <SelectItem key={p.id} value={p.id} className="text-white hover:bg-white/10">
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button 
+                  onClick={giveForPowerup}
+                  disabled={!selectedForPowerup || !targetUserId}
+                  className="w-full bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/30"
+                >
+                  Give Powerup
                 </Button>
               </div>
             </div>

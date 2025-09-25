@@ -79,7 +79,7 @@ export default function Dashboard() {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white text-glow-purple">Welcome back, {user.username}!</h1>
-            <p className="text-gray-400">Ready to play and earn points?</p>
+            <p className="text-gray-400">Ready to Win?</p>
           </div>
           <div className="flex space-x-3">
             {user.isAdmin && (
